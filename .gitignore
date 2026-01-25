@@ -1,0 +1,105 @@
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+*.pyc
+
+# Temporary files
+*.tmp
+*.temp
+*.copy
+*copy.*
+temp/
+tmp/
+
+# Security
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+.vault-token
+vault-keys.json
+
+# Sensitive data patterns
+*.env
+*.env.local
+*.env.*.local
+.env.test
+.env.staging
+.env.production
+
+# AWS/Cloud credentials
+~/.aws/*
+~/.gcp/*
+.aws/
+.gcp/
+
+# Private keys and certificates
+*.p12
+*.pfx
+*.jks
+
+# Git hooks (local)
+.githooks/hooks/*
+!.githooks/hooks/.gitkeep
+
+# Pre-commit
+.pre-commit-config.yaml.local
+.pre-commit-framework/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# BytePesa specific
+*.csv
+*.xlsx
+*.xls
+exports/
+imports/
+backups/
+
+# Docker volumes
+docker/volumes/
+postgres-data/
+redis-data/
+
+
+# Terraform
+terraform.tfvars          # Local terraform vars (never commit)
+terraform.tfvars.json     # JSON terraform vars (never commit)
+*.tfstate                 # State files (never commit)
+*.tfstate.backup          # State backups (never commit)
+.terraform/               # Terraform working directory
+.terraform.lock.hcl       # Lock file (can commit in some projects)
+override.tf               # Override files (local only)
+override.tf.json          # Override files JSON (local only)
+crash.log                 # Crash logs
+crash.*.log

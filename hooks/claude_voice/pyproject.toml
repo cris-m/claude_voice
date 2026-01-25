@@ -1,0 +1,12 @@
+[project]
+name = "claude-voice"
+version = "0.1.0"
+description = "Minimal Kokoro ONNX TTS for Claude Code hooks"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "kokoro-onnx>=0.4.3",
+    "numpy>=2.0.0",
+    "sounddevice>=0.5.0",
+]
+[tool.setuptools]
+packages = ["voice"]

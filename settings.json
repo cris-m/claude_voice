@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_notification.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak.py 'Command finished'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/debug_hook.py"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_summary.py"
+          }
+        ]
+      }
+    ]
+  }
+}
