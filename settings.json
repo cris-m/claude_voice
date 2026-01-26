@@ -6,7 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_notification.py"
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_notification.py",
+            "async": true,
+            "timeout": 30
           }
         ]
       }
@@ -17,7 +19,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak.py 'Command finished'"
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak.py 'Command finished'",
+            "async": true,
+            "timeout": 30
           }
         ]
       }
@@ -28,11 +32,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/debug_hook.py"
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/debug_hook.py",
+            "async": true,
+            "timeout": 30
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_summary.py"
+            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_summary.py",
+            "async": true,
+            "timeout": 30
           }
         ]
       }

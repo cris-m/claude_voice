@@ -72,7 +72,7 @@ def main():
         summary = extract_summary(last_response)
         if summary:
             log_debug(f"Speaking: {summary}")
-            speak(summary, voice="af_sarah", speed=1.2, lang="en-us")
+            speak(summary, voice="am_michael", speed=1.2, lang="en-us")
         else:
             log_debug("No TTS_SUMMARY found in response")
 

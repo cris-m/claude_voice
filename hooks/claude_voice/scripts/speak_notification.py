@@ -17,6 +17,6 @@ if __name__ == "__main__":
             message = message.replace("Claude needs", "I need")
             message = message.replace("Claude is", "I am")
             message = message.replace("Claude", "I")
-            speak(message, voice="af_sarah", speed=1.2, lang="en-us")
+            speak(message, voice="am_michael", speed=1.2, lang="en-us")
     except Exception:
         pass
