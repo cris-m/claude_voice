@@ -71,6 +71,8 @@ def main():
             log_debug(f"Speaking: {summary}")
             config = load_config()
             speak(summary, voice=config["voice"], speed=config["speed"], lang=config["lang"])
+            with open("/tmp/claude_voice_summary_spoken", "w") as f:
+                f.write("1")
         else:
             log_debug("No TTS_SUMMARY found in response")
 

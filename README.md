@@ -61,6 +61,9 @@ claude_voice/
 │   └── hooks.json
 ├── scripts/                    # Hook scripts
 │   ├── check_init.sh           # Checks if .venv exists on session start
+│   ├── record_command_start.py # Records when a Bash command begins
+│   ├── speak_command_done.py   # Announces completion for long commands (30s+)
+│   ├── speak_idle_done.py      # Speaks up if you've been away 60s after Claude finishes
 │   ├── speak.py                # Basic speech function
 │   ├── speak_notification.py   # Speaks notifications
 │   ├── speak_summary.py        # Extracts and speaks summaries
@@ -168,8 +171,10 @@ Once installed and initialized, these hooks run automatically:
 |------|--------------|
 | SessionStart | Checks if `.venv` exists, reminds you to run `/claude-voice:init` if not |
 | Notification | Speaks notification messages aloud |
-| PostToolUse (Bash) | Says “Done! Ready when you are.” after shell commands |
+| PreToolUse (Bash) | Records when a command starts |
+| PostToolUse (Bash) | Says “Done! Ready when you are.” if the command took 30+ seconds |
 | Stop | Extracts and speaks the TTS summary from responses |
+| Stop (idle) | Lets you know if you've been away for 60s after Claude finishes |
 
 No manual editing of `~/.claude/settings.json` is required when using plugins.
 
@@ -205,7 +210,7 @@ The plugin provides three slash commands:
    /claude-voice:tts-summary on
    ```
 4. Try it out:
-   - Run any Bash command — you'll hear “Done! Ready when you are.”
+   - Run a long command (30+ seconds) — you'll hear “Done! Ready when you are.”
    - Ask Claude a question — a spoken summary plays when it finishes
 
 ### Enable Spoken Summaries
@@ -236,9 +241,11 @@ Defined in [hooks/hooks.json](hooks/hooks.json):
 |------|---------|--------|-------|--------------|
 | SessionStart | — | `check_init.sh` | No | Warns if `.venv` is missing |
 | Notification | — | `speak_notification.py` | Yes | Speaks notification messages aloud |
-| PostToolUse | `Bash` | `speak.py` | Yes | Says “Done! Ready when you are.” after shell commands |
+| PreToolUse | `Bash` | `record_command_start.py` | No | Records when a command starts |
+| PostToolUse | `Bash` | `speak_command_done.py` | Yes | Says “Done! Ready when you are.” if the command took 30+ seconds |
 | Stop | — | `debug_hook.py` | Yes | Logs raw hook data to `/tmp/claude_hook_debug.json` |
 | Stop | — | `speak_summary.py` | Yes | Extracts and speaks TTS_SUMMARY from responses |
+| Stop | — | `speak_idle_done.py` | Yes | Lets you know if you've been away 60s after Claude finishes (skipped if summary was spoken) |
 
 ---
 

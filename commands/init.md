@@ -53,8 +53,10 @@ Once `.venv` exists, all hooks defined in `hooks/hooks.json` become active:
 | Hook | Script | What it does |
 |------|--------|--------------|
 | Notification | `speak_notification.py` | Speaks notification messages aloud |
-| PostToolUse (Bash) | `speak.py` | Announces "Done! Ready when you are." after shell commands |
+| PreToolUse (Bash) | `record_command_start.py` | Records when a command starts |
+| PostToolUse (Bash) | `speak_command_done.py` | Says "Done! Ready when you are." after commands that took 30+ seconds |
 | Stop | `speak_summary.py` | Extracts and speaks TTS_SUMMARY from responses |
+| Stop | `speak_idle_done.py` | Lets you know if you've been away 60s after Claude finishes |
 
 ---
 
