@@ -15,8 +15,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def main():
     stop_time = time.time()
 
-    with open(ACTIVITY_FILE, "w") as f:
-        f.write(str(stop_time))
+    # Read current activity baseline — do NOT write, to avoid overwriting
+    # a timestamp that record_command_start.py may have just set
+    try:
+        with open(ACTIVITY_FILE, "r") as f:
+            baseline = float(f.read().strip())
+    except (FileNotFoundError, ValueError):
+        baseline = stop_time
 
     try:
         os.remove(SUMMARY_SPOKEN_FILE)
@@ -25,13 +30,14 @@ def main():
 
     time.sleep(IDLE_THRESHOLD)
 
+    # If anything wrote a newer timestamp during our sleep, stay quiet
     try:
         with open(ACTIVITY_FILE, "r") as f:
             last_activity = float(f.read().strip())
     except (FileNotFoundError, ValueError):
         return
 
-    if last_activity != stop_time:
+    if last_activity != baseline:
         return
 
     if os.path.exists(SUMMARY_SPOKEN_FILE):
