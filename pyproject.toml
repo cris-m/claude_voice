@@ -8,5 +8,17 @@ dependencies = [
     "numpy>=2.0.0",
     "sounddevice>=0.5.0",
 ]
+
+[project.optional-dependencies]
+ja = ["misaki[ja]"]
+zh = ["misaki[zh]"]
+ko = ["misaki[ko]"]
+multi-lang = ["misaki"]
+all-languages = [
+    "misaki[ja]",
+    "misaki[zh]",
+    "misaki[ko]",
+]
+
 [tool.setuptools]
 packages = ["voice"]

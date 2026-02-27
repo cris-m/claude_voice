@@ -7,10 +7,9 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech
+from voice import speak, clean_for_speech, load_config
 
 def extract_summary(text: str) -> str | None:
-    """Extract text between TTS_SUMMARY markers."""
     pattern = r'<!--\s*TTS_SUMMARY\s*\n?(.*?)\n?TTS_SUMMARY\s*-->'
     match = re.search(pattern, text, re.DOTALL)
     if match:
@@ -18,7 +17,6 @@ def extract_summary(text: str) -> str | None:
     return None
 
 def get_last_assistant_message(transcript_path: str) -> str | None:
-    """Read transcript and get the last assistant message content."""
     try:
         with open(transcript_path, 'r') as f:
             lines = f.readlines()
@@ -45,7 +43,6 @@ def get_last_assistant_message(transcript_path: str) -> str | None:
     return None
 
 def log_debug(msg):
-    """Log debug info."""
     with open("/tmp/speak_summary_debug.log", "a") as f:
         f.write(f"{msg}\n")
 
@@ -72,7 +69,8 @@ def main():
         summary = extract_summary(last_response)
         if summary:
             log_debug(f"Speaking: {summary}")
-            speak(summary, voice="am_michael", speed=1.2, lang="en-us")
+            config = load_config()
+            speak(summary, voice=config["voice"], speed=config["speed"], lang=config["lang"])
         else:
             log_debug("No TTS_SUMMARY found in response")
 

@@ -5,12 +5,13 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak
+from voice import speak, load_config
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         text = " ".join(sys.argv[1:])
         try:
-            speak(text, voice="am_michael", speed=1.2, lang="en-us")
+            config = load_config()
+            speak(text, voice=config["voice"], speed=config["speed"], lang=config["lang"])
         except Exception:
             pass

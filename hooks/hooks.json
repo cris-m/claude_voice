@@ -1,12 +1,24 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh ${CLAUDE_PLUGIN_ROOT}/scripts/check_init.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_notification.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.venv/bin/python ${CLAUDE_PLUGIN_ROOT}/scripts/speak_notification.py",
             "async": true,
             "timeout": 30
           }
@@ -19,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak.py 'Command finished'",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.venv/bin/python ${CLAUDE_PLUGIN_ROOT}/scripts/speak_command_done.py",
             "async": true,
             "timeout": 30
           }
@@ -32,13 +44,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/debug_hook.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.venv/bin/python ${CLAUDE_PLUGIN_ROOT}/scripts/debug_hook.py",
             "async": true,
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_summary.py",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.venv/bin/python ${CLAUDE_PLUGIN_ROOT}/scripts/speak_summary.py",
             "async": true,
             "timeout": 30
           }

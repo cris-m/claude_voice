@@ -1,3 +1,8 @@
+---
+description: Enable or disable spoken audio summaries of Claude responses
+argument-hint: "[on|off]"
+---
+
 # TTS Summary Mode
 
 Control spoken audio summaries of Claude's responses using Kokoro text-to-speech.
@@ -237,10 +242,6 @@ When something goes wrong or you encounter an error.
 
 ### Proposing a Solution
 
-**Bad:**
-"I recommend option two."
-
-**Good:**
 "I looked at the three approaches for your authentication system. Option one using sessions is simpler but requires server memory. Option two using tokens is stateless and works better for mobile apps. Option three using a third party service is easiest but costs money. I recommend option two with tokens because your app needs to work on both web and mobile, and tokens handle that well without extra server costs."
 
 ---

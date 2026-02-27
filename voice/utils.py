@@ -4,7 +4,6 @@ from typing import Optional
 
 
 def download_kokoro_models(cache_dir: Optional[str] = None) -> tuple[str, str]:
-    """Download Kokoro model files. Returns (model_path, voices_path)."""
     import urllib.request
 
     if cache_dir is None:
@@ -29,7 +28,6 @@ def download_kokoro_models(cache_dir: Optional[str] = None) -> tuple[str, str]:
 
 
 def clean_for_speech(text: str) -> str:
-    """Remove markdown and special characters for TTS."""
     text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)
     text = re.sub(r'\*([^*]+)\*', r'\1', text)
     text = re.sub(r'`([^`]+)`', r'\1', text)

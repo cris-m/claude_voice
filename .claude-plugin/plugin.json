@@ -1,0 +1,9 @@
+{
+  "name": "claude-voice",
+  "description": "Adds spoken audio summaries and notifications via Kokoro TTS",
+  "version": "0.1.0",
+  "author": {
+    "name": "cris-m"
+  },
+  "homepage": "https://github.com/cris-m/claude_voice"
+}

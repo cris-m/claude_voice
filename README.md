@@ -50,26 +50,27 @@ This is useful for:
 ```
 claude_voice/
 │
-├── hooks/
-│   └── claude_voice/           # Main package (copy to ~/.claude/hooks/)
-│       ├── voice/              # TTS engine
-│       │   ├── __init__.py     # Package exports
-│       │   ├── voice.py        # Kokoro TTS class
-│       │   └── utils.py        # Text cleaning utilities
-│       │
-│       ├── scripts/            # Hook scripts
-│       │   ├── speak.py        # Basic speech function
-│       │   ├── speak_notification.py  # Speaks notifications
-│       │   ├── speak_summary.py       # Extracts and speaks summaries
-│       │   └── debug_hook.py   # Logs hook data for debugging
-│       │
-│       ├── pyproject.toml      # Python dependencies
-│       └── uv.lock             # Locked dependency versions
-│
-├── command/                    # Claude Code skills
+├── .claude-plugin/             # Plugin manifest
+│   ├── plugin.json
+│   └── marketplace.json
+├── commands/                   # Slash commands (namespaced by plugin)
+│   ├── init.md                 # Install packages and create .venv
+│   ├── config.md               # Interactive voice configuration wizard
 │   └── tts-summary.md          # Enable/disable TTS summaries
-│
-├── settings.json               # Example hook configuration
+├── hooks/                      # Event-driven hooks (plugin-scoped)
+│   └── hooks.json
+├── scripts/                    # Hook scripts
+│   ├── check_init.sh           # Checks if .venv exists on session start
+│   ├── speak.py                # Basic speech function
+│   ├── speak_notification.py   # Speaks notifications
+│   ├── speak_summary.py        # Extracts and speaks summaries
+│   └── debug_hook.py           # Logs hook data for debugging
+├── voice/                      # Kokoro TTS engine
+│   ├── __init__.py
+│   ├── voice.py
+│   └── utils.py
+├── pyproject.toml              # Python project config and dependencies
+├── voice_config.json           # User-configurable voice settings
 ├── LICENSE                     # MIT License
 └── README.md                   # This file
 ```
@@ -78,239 +79,172 @@ claude_voice/
 
 ## Installation
 
-### Step 1: Copy Project to Claude Configuration
+This project is a Claude Code plugin. Add its marketplace, install the plugin, then initialize the Python environment.
 
-Claude Code stores its configuration in the `~/.claude/` folder. We will copy the Claude Voice project into this folder so everything stays organized together.
+### Prerequisites
 
-```bash
-mkdir -p ~/.claude/hooks
-cp -r ~/claude_voice/hooks/claude_voice ~/.claude/hooks/
+- Claude Code 1.0.33 or later
+- Python 3.12–3.13 on your machine
+- macOS with audio output enabled
+
+### Step 1: Add the Marketplace
+
+Register the marketplace so Claude Code can discover the plugin.
+
+**From GitHub:**
+```
+/plugin marketplace add cris-m/claude_voice
 ```
 
-This copies the entire project to `~/.claude/hooks/claude_voice/`
-
-**Why copy here?**
-- Keeps all Claude-related files in one place
-- The `~/.claude/` folder is backed up with your Claude settings
-- Paths in the hook configuration use this location
-
-### Step 2: Install Dependencies
-
-Navigate to the project folder and install dependencies:
-
-```bash
-cd ~/.claude/hooks/claude_voice
+**From a local folder** (for development):
+```
+/plugin marketplace add /path/to/claude-voice
 ```
 
-#### Option A: Using uv (Recommended - Faster)
+You can also run `/plugin`, go to the **Marketplaces** tab, and add it interactively.
 
-[uv](https://github.com/astral-sh/uv) is a fast Python package manager. The project includes a `pyproject.toml` with all dependencies:
+### Step 2: Install the Plugin
+
+```
+/plugin install claude-voice@cris-m-claude_voice
+```
+
+Or run `/plugin`, go to the **Discover** tab, select **claude-voice**, and choose an installation scope (User, Project, or Local).
+
+### Step 3: Initialize (Required)
+
+All hooks depend on `.venv/bin/python` existing at the plugin root. **Hooks will not work until this step is completed.**
+
+The easiest way is to use the built-in command inside Claude Code:
+
+```
+/claude-voice:init
+```
+
+This creates `.venv` and installs all dependencies (`kokoro-onnx`, `numpy`, `sounddevice`). On session start, the plugin checks if `.venv` exists and reminds you to run `/claude-voice:init` if it's missing.
+
+**Alternatively**, install manually from your terminal:
 
 ```bash
+cd ~/.claude/plugins/cache/cris-m-claude_voice/claude-voice/0.1.0
 uv sync
 ```
 
-This creates the virtual environment and installs all dependencies automatically.
-
-#### Option B: Using Python
-
-If you do not have uv, use standard Python:
+If you don't have `uv`, use pip:
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-pip install kokoro sounddevice numpy
+.venv/bin/pip install -e .
 ```
 
-### Step 3: Add Hooks to Your Settings
-
-You have two options to configure hooks:
-
-#### Option A: Using Claude Code Interactive UI (Recommended)
-
-Claude Code has a built-in hooks menu. Run this command in Claude Code:
-
-```
-/hooks
-```
-
-This opens an interactive menu where you can add hooks without editing JSON files.
-
-#### Option B: Manual Configuration
-
-**WARNING:** Do NOT copy the entire `settings.json` file. This will overwrite your existing Claude settings and you will lose your configurations.
-
-Instead, you need to MERGE the hooks into your existing settings:
-
-#### Option A: If You Have No Existing Hooks
-
-If your `~/.claude/settings.json` does not have a "hooks" section, you can add one:
-
-1. Open your settings file:
-   ```bash
-   nano ~/.claude/settings.json
-   ```
-
-2. Add the hooks section from `claude_voice/settings.json` into your file
-
-3. Make sure the JSON structure is valid
-
-#### Option B: If You Already Have Hooks
-
-If you already have hooks configured, add the Claude Voice hooks to your existing hooks section.
-
-#### What To Add
-
-Open `~/.claude/hooks/claude_voice/settings.json` and copy the hooks inside the "hooks" object:
-
-```json
-{
-  "hooks": {
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_notification.py"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak.py 'Command finished'"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claude_voice/.venv/bin/python ~/.claude/hooks/claude_voice/scripts/speak_summary.py"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-
-### Step 4: Copy Skills to Claude Commands
-
-Claude Code looks for custom commands (skills) in `~/.claude/commands/`. Copy the TTS summary skill there:
-
+If `sounddevice` fails to build on macOS, install PortAudio first:
 ```bash
-cp ~/.claude/hooks/claude_voice/command/tts-summary.md ~/.claude/commands/
+brew install portaudio
 ```
 
-This makes the `/tts-summary` command available in Claude Code.
+### Step 4: Configure Voice (Optional)
 
-### Step 5: Restart Claude Code
+Pick your preferred voice, speed, and language with the interactive wizard:
 
-Close and reopen Claude Code for hooks to take effect.
+```
+/claude-voice:config
+```
+
+Claude walks you through the choices step by step. You can skip this — the default voice is `am_michael` (American Male) at 1.2x speed.
+
+### Step 5: Enable Spoken Summaries (Optional)
+
+Turn on audio summaries so Claude speaks a brief overview of each response:
+
+```
+/claude-voice:tts-summary on
+```
+
+### What Gets Activated
+
+Once installed and initialized, these hooks run automatically:
+
+| Hook | What it does |
+|------|--------------|
+| SessionStart | Checks if `.venv` exists, reminds you to run `/claude-voice:init` if not |
+| Notification | Speaks notification messages aloud |
+| PostToolUse (Bash) | Says “Done! Ready when you are.” after shell commands |
+| Stop | Extracts and speaks the TTS summary from responses |
+
+No manual editing of `~/.claude/settings.json` is required when using plugins.
+
+---
+
+## Commands
+
+The plugin provides three slash commands:
+
+| Command | Description |
+|---------|-------------|
+| `/claude-voice:init` | Create `.venv` and install Python dependencies — **required before hooks work** |
+| `/claude-voice:config` | Interactive wizard to choose voice, speed, and language |
+| `/claude-voice:tts-summary [on\|off]` | Enable or disable spoken audio summaries of Claude responses |
 
 ---
 
 ## Usage
 
+### Quick Start
+
+1. Install dependencies (required once):
+   ```
+   /claude-voice:init
+   ```
+2. Configure your voice (optional):
+   ```
+   /claude-voice:config
+   ```
+   Claude walks you through picking a voice, speed, and language.
+3. Enable spoken summaries:
+   ```
+   /claude-voice:tts-summary on
+   ```
+4. Try it out:
+   - Run any Bash command — you'll hear “Done! Ready when you are.”
+   - Ask Claude a question — a spoken summary plays when it finishes
+
 ### Enable Spoken Summaries
 
 ```
-/tts-summary
+/claude-voice:tts-summary
 ```
 
 or
 
 ```
-/tts-summary on
+/claude-voice:tts-summary on
 ```
 
 ### Disable Spoken Summaries
 
 ```
-/tts-summary off
+/claude-voice:tts-summary off
 ```
-
----
-
-## Understanding settings.json
-
-Your Claude settings file at `~/.claude/settings.json` may contain many configurations:
-
-```json
-{
-  "theme": "dark",
-  "model": "opus",
-  "hooks": {
-    ...
-  },
-  "other_settings": "..."
-}
-```
-
-The Claude Voice hooks go INSIDE the "hooks" section. If you already have other hooks, add these alongside them.
-
-### Example: Merging Hooks
-
-**Your existing settings.json:**
-```json
-{
-  "theme": "dark",
-  "hooks": {
-    "PreToolUse": [...]
-  }
-}
-```
-
-**After adding Claude Voice:**
-```json
-{
-  "theme": "dark",
-  "hooks": {
-    "PreToolUse": [...],
-    "Notification": [...],
-    "PostToolUse": [...],
-    "Stop": [...]
-  }
-}
-```
-
-Notice that we ADDED to the hooks, not replaced the whole file.
 
 ---
 
 ## Hook Configuration
 
-The hooks are configured in `settings.json`:
+Defined in [hooks/hooks.json](hooks/hooks.json):
 
-| Hook | Trigger | Action |
-|------|---------|--------|
-| Stop | Response completes | Speaks TTS_SUMMARY |
-| Notification | Claude notification | Speaks message |
-| PostToolUse (Bash) | Command finishes | Says "Command finished" |
-
-### Customizing
-
-Edit `settings.json` to:
-
-- Change which hooks are active
-- Modify script paths
-- Add new hooks
+| Hook | Matcher | Script | Async | What it does |
+|------|---------|--------|-------|--------------|
+| SessionStart | — | `check_init.sh` | No | Warns if `.venv` is missing |
+| Notification | — | `speak_notification.py` | Yes | Speaks notification messages aloud |
+| PostToolUse | `Bash` | `speak.py` | Yes | Says “Done! Ready when you are.” after shell commands |
+| Stop | — | `debug_hook.py` | Yes | Logs raw hook data to `/tmp/claude_hook_debug.json` |
+| Stop | — | `speak_summary.py` | Yes | Extracts and speaks TTS_SUMMARY from responses |
 
 ---
 
 ## How Summaries Work
 
-When `/tts-summary` is enabled, Claude adds a hidden summary block:
+When `/claude-voice:tts-summary` is enabled, Claude adds a hidden summary block:
 
 ```
 <!-- TTS_SUMMARY
@@ -318,7 +252,7 @@ Your summary text here.
 TTS_SUMMARY -->
 ```
 
-The `speak_summary.py` script:
+The Stop hook:
 
 1. Reads the conversation transcript
 2. Finds the TTS_SUMMARY markers
@@ -348,13 +282,12 @@ Claude provides different summaries based on context:
 ### No Audio Playing
 
 1. Check system volume
-2. Verify `settings.json` is at `~/.claude/settings.json`
-3. Check virtual environment is set up correctly
-4. Look at `/tmp/speak_summary_error.log`
+2. Ensure `.venv` exists in the plugin root and dependencies are installed (run `/claude-voice:init`)
+3. Look at `/tmp/speak_summary_error.log`
 
 ### Summary Not Spoken
 
-1. Run `/tts-summary` to enable
+1. Run `/claude-voice:tts-summary` to enable
 2. Check `/tmp/speak_summary_debug.log`
 3. Verify TTS_SUMMARY markers are in response
 
@@ -370,64 +303,113 @@ Claude provides different summaries based on context:
 
 ```bash
 echo '{"transcript_path":"/path/to/transcript.jsonl"}' | \
-  ~/.claude/hooks/claude_voice/.venv/bin/python \
-  ~/.claude/hooks/claude_voice/scripts/speak_summary.py
+  ./.venv/bin/python \
+  ./scripts/speak_summary.py
 ```
 
 ---
 
 ## Voice Configuration
-The default voice settings in `speak.py`:
-| Setting | Value |
-|---------|-------|
-| Voice | af_sarah |
-| Speed | 1.2 |
-| Language | en-us |
+
+All voice settings are stored in `voice_config.json` at the plugin root. Edit this file to customize voice, speed, and language without touching any code.
+
+```json
+{
+  "voice": "am_michael",
+  "speed": 1.2,
+  "lang": "en-us"
+}
+```
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `voice` | `am_michael` | Kokoro voice ID (see list below) |
+| `speed` | `1.2` | Speech speed multiplier |
+| `lang` | `en-us` | Language code |
+
+If `voice_config.json` is missing or contains invalid JSON, all scripts fall back to the defaults shown above. You can also override only the settings you want — any omitted keys use their defaults.
+
+Or run the interactive wizard:
+```
+/claude-voice:config
+```
+
+### Supported Languages
+
+English is built-in. Other languages require installing an extra dependency:
+
+| Language | `lang` code | Install command |
+|----------|-------------|-----------------|
+| English (American) | `en-us` | Built-in |
+| English (British) | `en-gb` | Built-in |
+| Japanese | `ja` | `uv pip install "misaki[ja]"` |
+| Mandarin Chinese | `zh` | `uv pip install "misaki[zh]"` |
+| Spanish | `es` | `uv pip install "misaki[es]"` |
+| French | `fr` | `uv pip install "misaki[fr]"` |
+| Hindi | `hi` | `uv pip install "misaki[hi]"` |
+| Italian | `it` | `uv pip install "misaki[it]"` |
+| Brazilian Portuguese | `pt` | `uv pip install "misaki[pt]"` |
+
+To install all languages at once:
+```bash
+cd ~/.claude/plugins/cache/cris-m-claude_voice/claude-voice/0.1.0
+uv pip install -e ".[all-languages]"
+```
 
 ### Available Voices
-**Male Voices:**
-- `am_michael` - Michael (American English)
-- `bm_george` - George (British English)
-- `am_adam` - Adam (Mandarin Chinese)
 
-**Female Voices:**
-- `af_sky` - Sky (Spanish)
-- `af_nicole` - Nicole (French)
-- `af_sarah` - Sarah (Hindi)
-- `bf_emma` - Emma (Italian)
-- `af_bella` - Bella (Japanese)
-- `bf_isabella` - Isabella (Portuguese)
+Voice IDs follow the pattern: `{lang}{gender}_{name}` where the first letter is the language (`a`=American, `b`=British, `j`=Japanese, etc.) and the second is gender (`f`=Female, `m`=Male).
 
-To change voices, edit the `speak()` calls in the script files with the voice ID:
-```python
-self.speak("Your text here", voice="am_michael", lang="en-us")
-```
+**English (American):**
+- `af_heart`, `af_alloy`, `af_aoede`, `af_bella`, `af_jessica`, `af_kore`, `af_nicole`, `af_nova`, `af_river`, `af_sarah`, `af_sky`
+- `am_adam`, `am_echo`, `am_eric`, `am_fenrir`, `am_liam`, `am_michael`, `am_onyx`, `am_puck`, `am_santa`
+
+**English (British):**
+- `bf_alice`, `bf_emma`, `bf_isabella`, `bf_lily`
+- `bm_daniel`, `bm_fable`, `bm_george`, `bm_lewis`
+
+**Japanese:**
+- `jf_alpha`, `jf_gongitsune`, `jf_nezumi`, `jf_tebukuro`
+- `jm_kumo`
+
+**Mandarin Chinese:**
+- `zf_xiaobei`, `zf_xiaoni`, `zf_xiaoxiao`, `zf_xiaoyi`
+- `zm_yunjian`, `zm_yunxi`, `zm_yunxia`, `zm_yunyang`
+
+**Spanish:**
+- `ef_dora`, `em_alex`, `em_santa`
+
+**French:**
+- `ff_siwis`
+
+**Hindi:**
+- `hf_alpha`, `hf_beta`
+- `hm_omega`, `hm_psi`
+
+**Italian:**
+- `if_sara`, `im_nicola`
+
+**Brazilian Portuguese:**
+- `pf_dora`, `pm_alex`, `pm_santa`
 
 ---
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.12+
 - macOS (for audio output)
 - Claude Code CLI
 - Kokoro TTS library
 
 ---
 
-## Files to Set Up
+## Uninstall
 
-To set up on a new machine:
+```
+/plugin uninstall claude-voice@cris-m-claude_voice
+```
 
-| Step | Action |
-|------|--------|
-| 1. Move project | Copy `claude_voice` folder to `~/.claude/hooks/` |
-| 2. Settings | **MERGE** hooks into `~/.claude/settings.json` (do not overwrite) |
-| 3. Skills | Copy `command/tts-summary.md` to `~/.claude/commands/` |
-
-**Remember:**
-- Do NOT use `cp` for settings.json - it will delete your existing settings
-- The scripts stay in the `~/.claude/hooks/claude_voice/` folder
-- All paths in hooks use `~/.claude/hooks/claude_voice/` as the base
+Or run `/plugin`, go to the **Installed** tab, and uninstall from there.
 
 ---
 
@@ -439,8 +421,8 @@ MIT License - Use freely.
 
 ## Resources
 
-- [Claude Code Hooks Documentation](https://docs.claude.com/en/docs/claude-code/hooks) - Official hooks reference
-- [Claude Code Showcase](https://github.com/ChrisWiles/claude-code-showcase) - Example project configurations
+- [Claude Code Plugins Documentation](https://code.claude.com/docs/en/discover-plugins) - Official plugin reference
+- [Official Plugin Marketplace](https://github.com/anthropics/claude-plugins-official) - Anthropic-managed plugins
 - [Kokoro TTS](https://github.com/hexgrad/kokoro) - Text-to-speech engine
 
 ---
