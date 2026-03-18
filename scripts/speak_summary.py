@@ -20,9 +20,9 @@ def extract_summary(text: str) -> str | None:
         return clean_for_speech(match.group(1).strip())
     return None
 
-def get_last_assistant_message(transcript_path: str) -> str | None:
+def get_last_assistant_message_from_transcript(transcript_path: str) -> str | None:
     try:
-        with open(transcript_path, 'r') as f:
+        with open(transcript_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
         for line in reversed(lines):
@@ -58,12 +58,15 @@ def main():
             return
 
         data = json.loads(input_data)
-        transcript_path = data.get("transcript_path")
-        if not transcript_path or not os.path.exists(transcript_path):
-            log_debug(f"No transcript: {transcript_path}")
-            return
 
-        last_response = get_last_assistant_message(transcript_path)
+        last_response = data.get("last_assistant_message")
+
+        if not last_response:
+            transcript_path = data.get("transcript_path")
+            if not transcript_path or not os.path.exists(transcript_path):
+                log_debug(f"No transcript: {transcript_path}")
+                return
+            last_response = get_last_assistant_message_from_transcript(transcript_path)
         if not last_response:
             log_debug("No last response found")
             return

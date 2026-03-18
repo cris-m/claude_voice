@@ -38,7 +38,7 @@ def main():
         sys.exit(1)
 
     result = subprocess.run(
-        [python_path, script_path],
+        [python_path, script_path] + sys.argv[2:],
         input=sys.stdin.buffer.read(),
     )
     sys.exit(result.returncode)
