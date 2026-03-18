@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 
 import sys
+import os
 import json
+import tempfile
 from datetime import datetime
+
+DEBUG_FILE = os.path.join(tempfile.gettempdir(), "claude_hook_debug.json")
 
 def main():
     try:
@@ -19,11 +23,11 @@ def main():
             except json.JSONDecodeError as e:
                 debug_info["error"] = f"JSON parse error: {e}"
 
-        with open("/tmp/claude_hook_debug.json", "a") as f:
+        with open(DEBUG_FILE, "a") as f:
             f.write(json.dumps(debug_info, indent=2, default=str))
             f.write("\n---\n")
     except Exception as e:
-        with open("/tmp/claude_hook_debug.json", "a") as f:
+        with open(DEBUG_FILE, "a") as f:
             f.write(f"Error: {e}\n---\n")
 
 if __name__ == "__main__":

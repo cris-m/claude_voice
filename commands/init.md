@@ -19,7 +19,15 @@ Create the Python virtual environment and install all required packages. This mu
 
 ## Instructions
 
-### 1. Create .venv and install packages
+### 1. Detect Python
+
+First, check which Python is available. Use whichever is found:
+
+```bash
+python3 --version || python --version
+```
+
+### 2. Create .venv and install packages
 
 **Preferred — using uv** (fast, handles venv creation automatically):
 ```bash
@@ -27,8 +35,15 @@ cd "${CLAUDE_PLUGIN_ROOT}" && uv sync
 ```
 
 **Fallback — using pip:**
+
+On macOS/Linux:
 ```bash
 cd "${CLAUDE_PLUGIN_ROOT}" && python3 -m venv .venv && .venv/bin/pip install -e .
+```
+
+On Windows:
+```bash
+cd "${CLAUDE_PLUGIN_ROOT}" && python -m venv .venv && .venv\Scripts\pip install -e .
 ```
 
 If `sounddevice` fails to build on macOS, install PortAudio first:
@@ -36,10 +51,14 @@ If `sounddevice` fails to build on macOS, install PortAudio first:
 brew install portaudio
 ```
 
-### 2. Verify
+On Windows, `sounddevice` wheels bundle PortAudio automatically.
+
+### 3. Verify
+
+Run the test speak script through the hook launcher to confirm the full pipeline works:
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" "Initialization complete. Voice is ready."
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" speak.py "Initialization complete. Voice is ready."
 ```
 
 You should hear the message spoken aloud. If not, check your system volume.
@@ -48,7 +67,7 @@ You should hear the message spoken aloud. If not, check your system volume.
 
 ## What this enables
 
-Once `.venv` exists, all hooks defined in `hooks/hooks.json` become active:
+Once `.venv` exists, all hooks defined in `hooks/hooks.json` become active. Hooks are launched via `run_hook.py`, which automatically finds the correct venv Python on any platform.
 
 | Hook | Script | What it does |
 |------|--------|--------------|

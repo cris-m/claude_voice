@@ -60,7 +60,7 @@ claude_voice/
 ├── hooks/                      # Event-driven hooks (plugin-scoped)
 │   └── hooks.json
 ├── scripts/                    # Hook scripts
-│   ├── check_init.sh           # Checks if .venv exists on session start
+│   ├── check_init.py           # Checks if .venv exists on session start (cross-platform)
 │   ├── record_command_start.py # Records when a Bash command begins
 │   ├── speak_command_done.py   # Announces completion for long commands (30s+)
 │   ├── speak_idle_done.py      # Speaks up if you've been away 60s after Claude finishes
@@ -82,31 +82,25 @@ claude_voice/
 
 ## Installation
 
-This project is a Claude Code plugin. Add its marketplace, install the plugin, then initialize the Python environment.
-
 ### Prerequisites
 
 - Claude Code 1.0.33 or later
 - Python 3.12–3.13 on your machine
-- macOS with audio output enabled
+- macOS, Windows, or Linux with audio output enabled
 
-### Step 1: Add the Marketplace
+---
 
-Register the marketplace so Claude Code can discover the plugin.
+### Option A: Install from GitHub (recommended)
 
-**From GitHub:**
+#### 1. Add the Marketplace
+
 ```
 /plugin marketplace add cris-m/claude_voice
 ```
 
-**From a local folder** (for development):
-```
-/plugin marketplace add /path/to/claude-voice
-```
+Or run `/plugin`, go to the **Marketplaces** tab, and add it interactively.
 
-You can also run `/plugin`, go to the **Marketplaces** tab, and add it interactively.
-
-### Step 2: Install the Plugin
+#### 2. Install the Plugin
 
 ```
 /plugin install claude-voice@cris-m-claude_voice
@@ -114,9 +108,80 @@ You can also run `/plugin`, go to the **Marketplaces** tab, and add it interacti
 
 Or run `/plugin`, go to the **Discover** tab, select **claude-voice**, and choose an installation scope (User, Project, or Local).
 
-### Step 3: Initialize (Required)
+#### 3. Initialize
 
-All hooks depend on `.venv/bin/python` existing at the plugin root. **Hooks will not work until this step is completed.**
+```
+/claude-voice:init
+```
+
+---
+
+### Option B: Install from a local clone
+
+If you cloned the repository and want to install from your local copy:
+
+#### 1. Clone the repository
+
+```bash
+git clone https://github.com/cris-m/claude_voice.git
+cd claude_voice
+```
+
+#### 2. Add the local folder as a marketplace
+
+From inside Claude Code:
+```
+/plugin marketplace add /path/to/claude_voice
+```
+
+Or from your terminal:
+```bash
+claude plugin marketplace add /path/to/claude_voice
+```
+
+#### 3. Install the plugin
+
+From inside Claude Code:
+```
+/plugin install claude-voice@cris-m-claude_voice --scope local
+```
+
+Or from your terminal:
+```bash
+claude plugin install claude-voice@cris-m-claude_voice --scope local
+```
+
+#### 4. Initialize
+
+```
+/claude-voice:init
+```
+
+---
+
+### Option C: Load directly for development
+
+If you are actively developing the plugin and want changes to take effect immediately (no reinstall needed):
+
+```bash
+claude --plugin-dir /path/to/claude_voice
+```
+
+Then initialize inside the session:
+```
+/claude-voice:init
+```
+
+To pick up code changes without restarting:
+```
+/reload-plugins
+```
+
+---
+
+### Initialize (Required for all options)
+
+All hooks depend on `.venv` existing at the plugin root. **Hooks will not work until initialization is completed.**
 
 The easiest way is to use the built-in command inside Claude Code:
 
@@ -129,21 +194,30 @@ This creates `.venv` and installs all dependencies (`kokoro-onnx`, `numpy`, `sou
 **Alternatively**, install manually from your terminal:
 
 ```bash
-cd ~/.claude/plugins/cache/cris-m-claude_voice/claude-voice/0.1.0
+cd <plugin-root>
 uv sync
 ```
 
 If you don't have `uv`, use pip:
 
+On macOS/Linux:
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -e .
+```
+
+On Windows:
+```bash
+python -m venv .venv
+.venv\Scripts\pip install -e .
 ```
 
 If `sounddevice` fails to build on macOS, install PortAudio first:
 ```bash
 brew install portaudio
 ```
+
+On Windows, `sounddevice` wheels bundle PortAudio automatically. If issues occur, install PortAudio from https://www.portaudio.com/.
 
 ### Step 4: Configure Voice (Optional)
 
@@ -239,11 +313,11 @@ Defined in [hooks/hooks.json](hooks/hooks.json):
 
 | Hook | Matcher | Script | Async | What it does |
 |------|---------|--------|-------|--------------|
-| SessionStart | — | `check_init.sh` | No | Warns if `.venv` is missing |
+| SessionStart | — | `check_init.py` | No | Warns if `.venv` is missing |
 | Notification | — | `speak_notification.py` | Yes | Speaks notification messages aloud |
 | PreToolUse | `Bash` | `record_command_start.py` | No | Records when a command starts |
 | PostToolUse | `Bash` | `speak_command_done.py` | Yes | Says “Done! Ready when you are.” if the command took 30+ seconds |
-| Stop | — | `debug_hook.py` | Yes | Logs raw hook data to `/tmp/claude_hook_debug.json` |
+| Stop | — | `debug_hook.py` | Yes | Logs raw hook data to `<tempdir>/claude_hook_debug.json` |
 | Stop | — | `speak_summary.py` | Yes | Extracts and speaks TTS_SUMMARY from responses |
 | Stop | — | `speak_idle_done.py` | Yes | Lets you know if you've been away 60s after Claude finishes (skipped if summary was spoken) |
 
@@ -290,21 +364,23 @@ Claude provides different summaries based on context:
 
 1. Check system volume
 2. Ensure `.venv` exists in the plugin root and dependencies are installed (run `/claude-voice:init`)
-3. Look at `/tmp/speak_summary_error.log`
+3. Look at `<tempdir>/speak_summary_error.log` (on macOS/Linux: `/tmp/`, on Windows: `%TEMP%`)
 
 ### Summary Not Spoken
 
 1. Run `/claude-voice:tts-summary` to enable
-2. Check `/tmp/speak_summary_debug.log`
+2. Check `<tempdir>/speak_summary_debug.log`
 3. Verify TTS_SUMMARY markers are in response
 
 ### Debug Logs
 
+Log files are written to the system temp directory (`/tmp/` on macOS/Linux, `%TEMP%` on Windows):
+
 | Log File | Contents |
 |----------|----------|
-| `/tmp/claude_hook_debug.json` | Raw hook data |
-| `/tmp/speak_summary_debug.log` | Script execution |
-| `/tmp/speak_summary_error.log` | Error messages |
+| `claude_hook_debug.json` | Raw hook data |
+| `speak_summary_debug.log` | Script execution |
+| `speak_summary_error.log` | Error messages |
 
 ### Test Manually
 
@@ -404,7 +480,7 @@ Voice IDs follow the pattern: `{lang}{gender}_{name}` where the first letter is 
 ## Requirements
 
 - Python 3.12+
-- macOS (for audio output)
+- macOS, Windows, or Linux (for audio output)
 - Claude Code CLI
 - Kokoro TTS library
 

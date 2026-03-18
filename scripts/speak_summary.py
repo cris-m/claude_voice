@@ -7,7 +7,11 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech, load_config
+from voice import speak, clean_for_speech, load_config, TEMP_DIR
+
+ERROR_LOG = os.path.join(TEMP_DIR, "speak_summary_error.log")
+DEBUG_LOG = os.path.join(TEMP_DIR, "speak_summary_debug.log")
+SUMMARY_SPOKEN_FILE = os.path.join(TEMP_DIR, "claude_voice_summary_spoken")
 
 def extract_summary(text: str) -> str | None:
     pattern = r'<!--\s*TTS_SUMMARY\s*\n?(.*?)\n?TTS_SUMMARY\s*-->'
@@ -38,12 +42,12 @@ def get_last_assistant_message(transcript_path: str) -> str | None:
             except json.JSONDecodeError:
                 continue
     except Exception as e:
-        with open("/tmp/speak_summary_error.log", "a") as f:
+        with open(ERROR_LOG, "a") as f:
             f.write(f"Error reading transcript: {e}\n")
     return None
 
 def log_debug(msg):
-    with open("/tmp/speak_summary_debug.log", "a") as f:
+    with open(DEBUG_LOG, "a") as f:
         f.write(f"{msg}\n")
 
 def main():
@@ -71,13 +75,13 @@ def main():
             log_debug(f"Speaking: {summary}")
             config = load_config()
             speak(summary, voice=config["voice"], speed=config["speed"], lang=config["lang"])
-            with open("/tmp/claude_voice_summary_spoken", "w") as f:
+            with open(SUMMARY_SPOKEN_FILE, "w") as f:
                 f.write("1")
         else:
             log_debug("No TTS_SUMMARY found in response")
 
     except Exception as e:
-        with open("/tmp/speak_summary_error.log", "a") as f:
+        with open(ERROR_LOG, "a") as f:
             f.write(f"Error: {e}\n")
 
 if __name__ == "__main__":

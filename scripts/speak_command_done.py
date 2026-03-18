@@ -3,12 +3,15 @@
 import sys
 import os
 import json
+import re
 import time
 
-STAMP_DIR = "/tmp/claude_voice_cmd_times"
-THRESHOLD_SECONDS = 30
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from voice import TEMP_DIR
+
+STAMP_DIR = os.path.join(TEMP_DIR, "claude_voice_cmd_times")
+THRESHOLD_SECONDS = 30
 
 
 def main():
@@ -18,7 +21,7 @@ def main():
 
     data = json.loads(input_data)
     tool_use_id = data.get("tool_use_id", "")
-    if not tool_use_id:
+    if not tool_use_id or not re.match(r'^[a-zA-Z0-9_\-]+$', tool_use_id):
         return
 
     stamp_file = os.path.join(STAMP_DIR, tool_use_id)

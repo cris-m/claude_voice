@@ -5,11 +5,13 @@ import os
 import json
 import time
 
-ACTIVITY_FILE = "/tmp/claude_voice_last_activity"
-SUMMARY_SPOKEN_FILE = "/tmp/claude_voice_summary_spoken"
-IDLE_THRESHOLD = 60  # seconds
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from voice import TEMP_DIR
+
+ACTIVITY_FILE = os.path.join(TEMP_DIR, "claude_voice_last_activity")
+SUMMARY_SPOKEN_FILE = os.path.join(TEMP_DIR, "claude_voice_summary_spoken")
+IDLE_THRESHOLD = 60  # seconds
 
 
 def main():

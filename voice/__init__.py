@@ -1,11 +1,25 @@
 import json
 import os
+import sys
+import tempfile
 
 from .voice import KokoroTTS, speak
 from .utils import clean_for_speech, download_kokoro_models
 
 __version__ = "0.1.0"
-__all__ = ["KokoroTTS", "speak", "clean_for_speech", "download_kokoro_models", "load_config"]
+__all__ = [
+    "KokoroTTS", "speak", "clean_for_speech", "download_kokoro_models",
+    "load_config", "TEMP_DIR", "venv_python",
+]
+
+TEMP_DIR = tempfile.gettempdir()
+
+
+def venv_python() -> str:
+    plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if sys.platform == "win32":
+        return os.path.join(plugin_root, ".venv", "Scripts", "python.exe")
+    return os.path.join(plugin_root, ".venv", "bin", "python")
 
 _DEFAULTS = {
     "voice": "am_michael",

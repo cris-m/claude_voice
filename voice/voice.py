@@ -1,19 +1,33 @@
-import fcntl
 import os
-import sys
+import tempfile
+import time
 from typing import Optional
 
 import numpy as np
 import sounddevice as sd
 
-AUDIO_LOCK_FILE = "/tmp/claude_voice_audio.lock"
+AUDIO_LOCK_FILE = os.path.join(tempfile.gettempdir(), "claude_voice_audio.lock")
 
 from .utils import download_kokoro_models
 
-if sys.platform == "darwin":
-    _brew_lib = "/opt/homebrew/lib"
-    if os.path.isdir(_brew_lib):
-        os.environ.setdefault("DYLD_LIBRARY_PATH", _brew_lib)
+
+def _acquire_lock() -> str:
+    lock_path = AUDIO_LOCK_FILE + ".lck"
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return lock_path
+        except FileExistsError:
+            time.sleep(0.05)
+
+
+def _release_lock(lock_path: str) -> None:
+    """Release the lock by removing the lock file."""
+    try:
+        os.unlink(lock_path)
+    except OSError:
+        pass
 
 
 class KokoroTTS:
@@ -38,14 +52,12 @@ class KokoroTTS:
         if samples.dtype != np.float32:
             samples = samples.astype(np.float32)
         if len(samples) > 0:
-            lock_fd = open(AUDIO_LOCK_FILE, "w")
+            lock_path = _acquire_lock()
             try:
-                fcntl.flock(lock_fd, fcntl.LOCK_EX)
                 sd.play(samples, sample_rate)
                 sd.wait()
             finally:
-                fcntl.flock(lock_fd, fcntl.LOCK_UN)
-                lock_fd.close()
+                _release_lock(lock_path)
 
 
 def speak(text: str, voice: str = "af_sarah", speed: float = 1.0, lang: str = "en-us") -> None:

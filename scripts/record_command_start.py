@@ -3,10 +3,19 @@
 import sys
 import os
 import json
+import re
 import time
 
-STAMP_DIR = "/tmp/claude_voice_cmd_times"
-ACTIVITY_FILE = "/tmp/claude_voice_last_activity"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from voice import TEMP_DIR
+
+STAMP_DIR = os.path.join(TEMP_DIR, "claude_voice_cmd_times")
+ACTIVITY_FILE = os.path.join(TEMP_DIR, "claude_voice_last_activity")
+
+
+def _safe_id(tool_use_id: str) -> bool:
+    return bool(re.match(r'^[a-zA-Z0-9_\-]+$', tool_use_id))
 
 
 def main():
@@ -16,7 +25,7 @@ def main():
 
     data = json.loads(input_data)
     tool_use_id = data.get("tool_use_id", "")
-    if not tool_use_id:
+    if not tool_use_id or not _safe_id(tool_use_id):
         return
 
     now = str(time.time())
