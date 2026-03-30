@@ -7,7 +7,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech, load_config, TEMP_DIR
+from voice import speak, clean_for_speech, TEMP_DIR
 
 ERROR_LOG = os.path.join(TEMP_DIR, "speak_summary_error.log")
 DEBUG_LOG = os.path.join(TEMP_DIR, "speak_summary_debug.log")
@@ -76,8 +76,7 @@ def main():
         summary = extract_summary(last_response)
         if summary:
             log_debug(f"Speaking: {summary}")
-            config = load_config()
-            speak(summary, voice=config["voice"], speed=config["speed"], lang=config["lang"])
+            speak(summary)
             with open(SUMMARY_SPOKEN_FILE, "w") as f:
                 f.write("1")
         else:

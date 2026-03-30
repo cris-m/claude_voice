@@ -1,5 +1,26 @@
 {
-  "voice": "am_michael",
-  "speed": 1.2,
-  "lang": "en-us"
+  "provider": "kokoro",
+  "tts_summary_enabled": true,
+  "messages": {
+    "command_done": "All finished! What's next?",
+    "idle_done": "Just a heads up, everything's wrapped up on my end. Take your time!"
+  },
+  "kokoro": {
+    "voice": "am_michael",
+    "speed": 1.2,
+    "lang": "en-us"
+  },
+  "chatterbox": {
+    "model_variant": "original",
+    "exaggeration": 0.5,
+    "cfg_weight": 0.5,
+    "temperature": 0.8,
+    "audio_prompt_path": null
+  },
+  "mlx": {
+    "model": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-bf16",
+    "voice": "Aiden",
+    "language": "en",
+    "instruct": "enthusiastic and energetic"
+  }
 }

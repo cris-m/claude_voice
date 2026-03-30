@@ -17,8 +17,6 @@ IDLE_THRESHOLD = 60  # seconds
 def main():
     stop_time = time.time()
 
-    # Read current activity baseline — do NOT write, to avoid overwriting
-    # a timestamp that record_command_start.py may have just set
     try:
         with open(ACTIVITY_FILE, "r") as f:
             baseline = float(f.read().strip())
@@ -32,7 +30,6 @@ def main():
 
     time.sleep(IDLE_THRESHOLD)
 
-    # If anything wrote a newer timestamp during our sleep, stay quiet
     try:
         with open(ACTIVITY_FILE, "r") as f:
             last_activity = float(f.read().strip())
@@ -48,12 +45,8 @@ def main():
     from voice import speak, load_config
 
     config = load_config()
-    speak(
-        "Hey, I'm all done over here. Let me know if you need anything else.",
-        voice=config["voice"],
-        speed=config["speed"],
-        lang=config["lang"],
-    )
+    message = config.get("messages", {}).get("idle_done", "Hey, I'm all done over here. Let me know if you need anything else.")
+    speak(message)
 
 
 if __name__ == "__main__":

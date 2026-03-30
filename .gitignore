@@ -29,6 +29,7 @@ __pycache__/
 dist/
 build/
 *.pyc
+*.egg-info/
 
 # Temporary files
 *.tmp

@@ -32,7 +32,6 @@ def main():
     except (FileNotFoundError, ValueError):
         return
     finally:
-        # Clean up regardless
         try:
             os.remove(stamp_file)
         except OSError:
@@ -45,12 +44,8 @@ def main():
     from voice import speak, load_config
 
     config = load_config()
-    speak(
-        "Done! Ready when you are.",
-        voice=config["voice"],
-        speed=config["speed"],
-        lang=config["lang"],
-    )
+    message = config.get("messages", {}).get("command_done", "Done! Ready when you are.")
+    speak(message)
 
 
 if __name__ == "__main__":
