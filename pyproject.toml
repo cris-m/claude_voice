@@ -1,5 +1,5 @@
 [project]
-name = "claude-voice"
+name = "voice-summary"
 version = "0.2.0"
 description = "Text-to-speech for Claude Code hooks — supports Kokoro, Chatterbox, and MLX-Audio"
 requires-python = ">=3.11"

@@ -1,9 +1,22 @@
 {
   "provider": "kokoro",
-  "tts_summary_enabled": true,
-  "messages": {
-    "command_done": "All finished! What's next?",
-    "idle_done": "Just a heads up, everything's wrapped up on my end. Take your time!"
+  "tts_summary_enabled": false,
+  "summary_length": "medium",
+  "streaming": true,
+  "follow_ups": {
+    "command_done": {
+      "enabled": true,
+      "threshold_seconds": 30,
+      "message": "All finished! What's next?"
+    },
+    "idle_done": {
+      "enabled": true,
+      "threshold_seconds": 60,
+      "message": "Just a heads up, everything's wrapped up on my end. Take your time!"
+    },
+    "notification": {
+      "enabled": true
+    }
   },
   "kokoro": {
     "voice": "am_michael",
@@ -21,6 +34,7 @@
     "model": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-bf16",
     "voice": "Aiden",
     "language": "en",
-    "instruct": "enthusiastic and energetic"
+    "instruct": "enthusiastic and energetic",
+    "streaming_interval": 1.0
   }
 }

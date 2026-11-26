@@ -104,3 +104,5 @@ override.tf               # Override files (local only)
 override.tf.json          # Override files JSON (local only)
 crash.log                 # Crash logs
 crash.*.log
+# Runtime state when run from a dev checkout (no CLAUDE_PLUGIN_DATA)
+state/

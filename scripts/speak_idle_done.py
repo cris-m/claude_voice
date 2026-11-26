@@ -1,52 +1,48 @@
 #!/usr/bin/env python3
+"""Stop hook: after a quiet period, let the user know Claude has finished.
 
-import sys
+Skipped if the user did anything in the meantime, or if a summary was already
+spoken for this turn (always-on summary or the speak skill).
+"""
+
 import os
-import json
+import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import TEMP_DIR
+from voice import load_config, follow_up
+from voice.paths import state_dir
+from voice.speaker import last_summary_spoken, speak_detached
 
-ACTIVITY_FILE = os.path.join(TEMP_DIR, "claude_voice_last_activity")
-SUMMARY_SPOKEN_FILE = os.path.join(TEMP_DIR, "claude_voice_summary_spoken")
-IDLE_THRESHOLD = 60  # seconds
+# The Stop hook running this script has a 600s timeout in hooks.json. Speech
+# itself runs detached, so only the wait has to fit inside it.
+MAX_IDLE_THRESHOLD = 580
+
+
+def _read_time(name: str) -> float:
+    try:
+        with open(os.path.join(state_dir(), name)) as f:
+            return float(f.read().strip())
+    except (OSError, ValueError):
+        return 0.0
 
 
 def main():
-    stop_time = time.time()
-
-    try:
-        with open(ACTIVITY_FILE, "r") as f:
-            baseline = float(f.read().strip())
-    except (FileNotFoundError, ValueError):
-        baseline = stop_time
-
-    try:
-        os.remove(SUMMARY_SPOKEN_FILE)
-    except OSError:
-        pass
-
-    time.sleep(IDLE_THRESHOLD)
-
-    try:
-        with open(ACTIVITY_FILE, "r") as f:
-            last_activity = float(f.read().strip())
-    except (FileNotFoundError, ValueError):
+    settings = follow_up(load_config(), "idle_done")
+    if not settings["enabled"]:
         return
+    threshold = max(0.0, min(settings["threshold_seconds"], MAX_IDLE_THRESHOLD))
 
-    if last_activity != baseline:
-        return
+    baseline = _read_time("last_activity")
+    time.sleep(threshold)
 
-    if os.path.exists(SUMMARY_SPOKEN_FILE):
-        return
+    if _read_time("last_activity") != baseline:
+        return  # the user did something in the meantime
+    if last_summary_spoken() >= _read_time("last_prompt"):
+        return  # a summary was already spoken since the last message
 
-    from voice import speak, load_config
-
-    config = load_config()
-    message = config.get("messages", {}).get("idle_done", "Hey, I'm all done over here. Let me know if you need anything else.")
-    speak(message)
+    speak_detached(settings["message"])
 
 
 if __name__ == "__main__":

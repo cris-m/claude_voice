@@ -1,12 +1,14 @@
 import json
 import os
+import sys
 
 plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-config_path = os.path.join(plugin_root, "voice_config.json")
+sys.path.insert(0, plugin_root)
+
+from voice.paths import read_config
 
 try:
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    config = read_config()
 except Exception:
     config = {}
 
@@ -15,10 +17,16 @@ if not config.get("tts_summary_enabled", False):
 
 provider = config.get("provider", "kokoro")
 
-instruction = """TTS Summary is enabled. End EVERY response with:
+from voice.lengths import LENGTHS, resolve_length
+
+length = resolve_length(config.get("summary_length"))
+
+instruction = f"""TTS Summary is enabled. End EVERY response with:
 <!-- TTS_SUMMARY
-Your spoken summary here (2-6 sentences, conversational, first person).
+Your spoken summary here (conversational, first person).
 TTS_SUMMARY -->
+
+Length ({length}): {LENGTHS[length]}
 
 Write as a natural spoken briefing. Avoid file paths, code, abbreviations, URLs, or special characters. Say "I fixed" not "The bug was fixed"."""
 

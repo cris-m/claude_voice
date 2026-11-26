@@ -1,5 +1,5 @@
 ---
-description: Enable or disable spoken audio summaries of Claude responses
+description: Enable or disable always-on spoken summaries at the end of every response (for a one-off summary use /voice-summary:speak)
 argument-hint: "[on|off]"
 allowed-tools: [Read, Write, Edit]
 ---
@@ -14,7 +14,7 @@ $ARGUMENTS
 
 ### Toggling
 
-**If argument is empty or "on":** Read the current `${CLAUDE_PLUGIN_ROOT}/voice_config.json`, set `"tts_summary_enabled": true`, and write it back. Confirm to the user.
+**If argument is empty or "on":** Read the current `${CLAUDE_PLUGIN_DATA}/voice_config.json` (copy it from `${CLAUDE_PLUGIN_ROOT}/voice_config.json` first if it doesn't exist), set `"tts_summary_enabled": true`, and write it back. Confirm to the user.
 
 **If argument is "off":** Set `"tts_summary_enabled": false` in the config. Confirm to the user.
 
@@ -38,7 +38,7 @@ The `speak_summary.py` hook extracts text between these exact markers and speaks
 
 ## Writing Good Summaries
 
-Write **3-8 sentences** as a clear, insightful spoken briefing. The goal is to give someone a complete understanding without needing to read the screen.
+Write at the length set by `summary_length` in the config (`short`, `medium`, `long` or `podcast`; the injected instruction states the target). Make it a clear, insightful spoken briefing. The goal is to give someone a complete understanding without needing to read the screen.
 
 ### Voice & Tone
 - Write in **first person** — say "I fixed the bug" not "The bug was fixed"

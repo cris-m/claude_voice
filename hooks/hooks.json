@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/check_init.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/check_init.py\"",
             "timeout": 5
           }
         ]
@@ -18,7 +18,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/inject_tts_instruction.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/inject_tts_instruction.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/record_prompt.py\"",
             "timeout": 5
           }
         ]
@@ -30,9 +42,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py speak_notification.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_notification.py",
             "async": true,
-            "timeout": 120
+            "timeout": 30
           }
         ]
       }
@@ -43,7 +55,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py record_command_start.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" record_command_start.py",
             "timeout": 5
           }
         ]
@@ -55,9 +67,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py speak_command_done.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_command_done.py",
             "async": true,
-            "timeout": 120
+            "timeout": 30
           }
         ]
       }
@@ -68,21 +80,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py debug_hook.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_summary.py",
             "async": true,
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py speak_summary.py",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_idle_done.py",
             "async": true,
-            "timeout": 120
-          },
-          {
-            "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py speak_idle_done.py",
-            "async": true,
-            "timeout": 180
+            "timeout": 600
           }
         ]
       }

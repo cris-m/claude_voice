@@ -7,11 +7,12 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech, TEMP_DIR
+from voice import clean_for_speech, load_config
+from voice.paths import state_dir
+from voice.speaker import speak_detached
 
-ERROR_LOG = os.path.join(TEMP_DIR, "speak_summary_error.log")
-DEBUG_LOG = os.path.join(TEMP_DIR, "speak_summary_debug.log")
-SUMMARY_SPOKEN_FILE = os.path.join(TEMP_DIR, "claude_voice_summary_spoken")
+ERROR_LOG = os.path.join(state_dir(), "speak_summary_error.log")
+DEBUG_LOG = os.path.join(state_dir(), "speak_summary_debug.log")
 
 def extract_summary(text: str) -> str | None:
     pattern = r'<!--\s*TTS_SUMMARY\s*\n?(.*?)\n?TTS_SUMMARY\s*-->'
@@ -52,6 +53,12 @@ def log_debug(msg):
 
 def main():
     try:
+        # Respect speak mode being switched off mid-session, even if Claude
+        # still emits a summary block from earlier instructions.
+        if not load_config().get("tts_summary_enabled", False):
+            log_debug("Speak mode off; skipping")
+            return
+
         input_data = sys.stdin.read().strip()
         if not input_data:
             log_debug("No input data")
@@ -75,10 +82,10 @@ def main():
 
         summary = extract_summary(last_response)
         if summary:
-            log_debug(f"Speaking: {summary}")
-            speak(summary)
-            with open(SUMMARY_SPOKEN_FILE, "w") as f:
-                f.write("1")
+            # Log only the size: summaries can quote private conversation content.
+            log_debug(f"Speaking summary ({len(summary)} chars)")
+            # Detached: long and podcast summaries outlast the hook timeout.
+            speak_detached(summary, summary=True)
         else:
             log_debug("No TTS_SUMMARY found in response")
 
