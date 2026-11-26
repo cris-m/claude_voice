@@ -120,6 +120,10 @@ def speak(text: str, **kwargs) -> None:
         }
 
     if config.get("streaming", True) and tts.supports_streaming:
+        try:
+            tts.stream_prebuffer = max(0.0, float(config.get("stream_prebuffer_seconds", 0.5)))
+        except (TypeError, ValueError):
+            pass
         tts.speak_stream(text, **speak_kwargs)
     else:
         tts.speak(text, **speak_kwargs)

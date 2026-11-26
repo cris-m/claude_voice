@@ -3,6 +3,7 @@
   "tts_summary_enabled": false,
   "summary_length": "medium",
   "streaming": true,
+  "stream_prebuffer_seconds": 0.5,
   "follow_ups": {
     "command_done": {
       "enabled": true,

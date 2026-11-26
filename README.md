@@ -170,6 +170,7 @@ The full set of settings:
   "tts_summary_enabled": false,
   "summary_length": "medium",
   "streaming": true,
+  "stream_prebuffer_seconds": 0.5,
   "follow_ups": {
     "command_done": { "enabled": true, "threshold_seconds": 30, "message": "All finished! What's next?" },
     "idle_done": { "enabled": true, "threshold_seconds": 60, "message": "Just a heads up, everything's wrapped up on my end. Take your time!" },
@@ -207,11 +208,14 @@ Each provider has its own block. Only the active provider's block is used.
 | `tts_summary_enabled` | `false` | Always-on summaries after every response |
 | `summary_length` | `medium` | Default length: `short`, `medium`, `long` or `podcast` |
 | `streaming` | `true` | Play audio while it is being generated, where supported |
+| `stream_prebuffer_seconds` | `0.5` | Audio queued before streamed playback starts; raise it if speech stutters on a slower machine |
 | `follow_ups` | all on | See below |
 
 ### Streaming
 
 With `"streaming": true` (the default), audio starts playing while the rest is still being generated. Kokoro and MLX-Audio support this. Chatterbox has no streaming API and always generates the full clip first. Set it to `false` to always generate the whole clip before playing.
+
+The model generates on a background thread while audio plays, and playback starts once `stream_prebuffer_seconds` of audio is queued. If speech still stutters on a slower machine, raise the prebuffer (for example to `2.0`) or turn streaming off.
 
 ### Follow-ups
 

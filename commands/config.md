@@ -175,7 +175,7 @@ Ask for the default `summary_length`: `short` (1-2 sentences), `medium` (3-6 sen
 
 ### Step 6: Streaming
 
-Ask whether to stream audio (`"streaming": true`, the default). With streaming on, playback starts while the rest of the speech is still being generated, which noticeably cuts the delay on long summaries. Kokoro and MLX-Audio support it; Chatterbox ignores the setting and always generates the full clip first. For MLX, `mlx.streaming_interval` (seconds of audio per chunk, default `1.0`) trades latency against smoothness.
+Ask whether to stream audio (`"streaming": true`, the default). With streaming on, playback starts while the rest of the speech is still being generated, which noticeably cuts the delay on long summaries. Kokoro and MLX-Audio support it; Chatterbox ignores the setting and always generates the full clip first. For MLX, `mlx.streaming_interval` (seconds of audio per chunk, default `1.0`) trades latency against smoothness. If the user reports stuttering, raise `stream_prebuffer_seconds` (default `0.5`), which is how much audio is queued before playback starts.
 
 ---
 
