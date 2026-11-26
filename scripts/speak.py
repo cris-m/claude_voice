@@ -1,86 +1,72 @@
 #!/usr/bin/env python3
 """Speak text aloud.
 
-    speak.py "some text"        speak the arguments (blocks until done)
-    speak.py < file             speak stdin (blocks until done)
-    speak.py --detach < file    speak stdin in a background process and return at once
-    speak.py --stop             stop whatever is currently being spoken
+    speak.py "some text"             speak the arguments (blocks until done)
+    speak.py < file                  speak stdin (blocks until done)
+    speak.py --detach < file         speak stdin in the background, return at once
+    speak.py --stop                  stop everything currently being spoken
+
+Add --summary to mark the speech as a summary (suppresses the idle follow-up).
 """
 
 import os
 import signal
-import subprocess
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import TEMP_DIR
-
-PID_FILE = os.path.join(TEMP_DIR, "claude_voice_speak.pid")
-
-
-def _stop() -> None:
-    try:
-        with open(PID_FILE) as f:
-            pid = int(f.read().strip())
-        os.kill(pid, signal.SIGTERM)
-    except (OSError, ValueError):
-        pass
+from voice.speaker import (
+    Registration, mark_summary_spoken, speak_detached, stop_all,
+)
 
 
-def _speak(text: str) -> None:
+def _speak(text: str, summary: bool) -> None:
     text = text.strip()
     if not text:
         return
-    # Turn SIGTERM (from --stop) into a normal exit so the audio lock is released.
+    # Turn SIGTERM (from --stop) into a normal exit so locks are released and
+    # audio is cut off cleanly.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    with open(PID_FILE, "w") as f:
-        f.write(str(os.getpid()))
-    try:
+    with Registration():
+        if summary:
+            mark_summary_spoken()
         from voice import speak
         speak(text)
-    finally:
-        try:
-            with open(PID_FILE) as f:
-                if f.read().strip() == str(os.getpid()):
-                    os.remove(PID_FILE)
-        except OSError:
-            pass
-
-
-def _detach(text: str) -> None:
-    fd, path = tempfile.mkstemp(prefix="claude_voice_", suffix=".txt")
-    with os.fdopen(fd, "w", encoding="utf-8") as f:
-        f.write(text)
-    subprocess.Popen(
-        [sys.executable, os.path.abspath(__file__), "--file", path],
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
 
 
 def main() -> None:
     args = sys.argv[1:]
+    summary = "--summary" in args
+    args = [a for a in args if a != "--summary"]
+
     if args[:1] == ["--stop"]:
-        _stop()
+        stop_all()
     elif args[:1] == ["--detach"]:
-        _detach(sys.stdin.read())
-    elif args[:1] == ["--file"] and len(args) > 1:
-        with open(args[1], encoding="utf-8") as f:
-            text = f.read()
-        os.remove(args[1])
-        _speak(text)
+        speak_detached(sys.stdin.read(), summary=summary)
+    elif args[:1] == ["--file"] and len(args) == 2:
+        try:
+            with open(args[1], encoding="utf-8") as f:
+                text = f.read()
+        finally:
+            try:
+                os.remove(args[1])
+            except OSError:
+                pass
+        _speak(text, summary)
     elif args:
-        _speak(" ".join(args))
+        _speak(" ".join(args), summary)
     else:
-        _speak(sys.stdin.read())
+        _speak(sys.stdin.read(), summary)
 
 
 if __name__ == "__main__":
     try:
         main()
-    except Exception:
+    except (Exception, SystemExit):
         pass
+    finally:
+        # Cleanup (audio cut, locks released, registry entry removed) has run by
+        # now. Exit at once rather than wait for a TTS worker thread to finish
+        # generating audio nobody will hear.
+        sys.stdout.flush()
+        os._exit(0)

@@ -58,7 +58,7 @@ If non-English, install dependencies:
 
 | Language | Install command |
 |----------|-----------------|
-| Japanese | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[ja]" && "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" -m unidic download` |
+| Japanese | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[ja]" && uv run --no-project --python "${CLAUDE_PLUGIN_DATA}/.venv" python -m unidic download` |
 | Chinese | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[zh]"` |
 | Korean | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[ko]"` |
 | Others | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" misaki` |
@@ -214,7 +214,7 @@ Save to `${CLAUDE_PLUGIN_DATA}/voice_config.json`. Set language-appropriate `fol
 ### Step 8: Test the voice
 
 ```bash
-CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" "<test_sentence>"
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py "<test_sentence>"
 ```
 
 Use a natural test sentence appropriate to the language.

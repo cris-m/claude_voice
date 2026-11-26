@@ -46,6 +46,8 @@ claude_voice/
 │   ├── check_init.py
 │   ├── inject_tts_instruction.py
 │   ├── record_command_start.py
+│   ├── run_hook.py          # Runs a script with the venv Python (all platforms)
+│   ├── record_prompt.py     # Notes when you last sent a message
 │   ├── speak.py             # speak text; --detach / --stop for background playback
 │   ├── speak_command_done.py
 │   ├── speak_idle_done.py
@@ -59,7 +61,8 @@ claude_voice/
 │   ├── kokoro_tts.py         # Kokoro ONNX provider
 │   ├── chatterbox_tts.py     # Chatterbox provider
 │   ├── mlx_tts.py            # MLX-Audio provider
-│   ├── paths.py             # Where the venv and config live (persistent data dir)
+│   ├── paths.py             # Data/state dirs, config loading, OS file locks
+│   ├── speaker.py           # Background speakers: start, track, stop
 │   └── utils.py
 ├── tools/
 │   └── release.py           # Bump version, commit, tag vX.Y.Z
@@ -79,6 +82,7 @@ claude_voice/
 - Claude Code 1.0.33+
 - Python 3.11+ (3.12+ for Kokoro)
 - macOS, Windows, or Linux with audio output
+- `python3` on your PATH (hooks and the skill call it to launch the plugin's own virtualenv)
 
 ### From GitHub
 
@@ -216,7 +220,7 @@ With `"streaming": true` (the default), audio starts playing while the rest is s
 | Key | Fires when | Notes |
 |-----|-----------|-------|
 | `command_done` | A Bash command ran longer than `threshold_seconds` | |
-| `idle_done` | No activity for `threshold_seconds` after Claude stops, and no summary was spoken | Capped at 170s by the hook timeout |
+| `idle_done` | No activity for `threshold_seconds` after Claude stops, and no summary was spoken since your last message | Capped at 580s by the hook timeout |
 | `notification` | Claude Code raises a notification | |
 
 The older `messages.command_done` / `messages.idle_done` keys still work.
@@ -256,6 +260,7 @@ The older `messages.command_done` / `messages.idle_done` keys still work.
 | Hook | What it does |
 |------|-------------|
 | SessionStart | Checks the virtualenv exists, reminds to run `/voice-summaries:init` |
+| UserPromptSubmit | Records when you last sent a message (used by the idle follow-up) |
 | InstructionsLoaded | When always-on summaries are enabled, injects the summary instruction at `summary_length` (survives context compression) |
 | Notification | Speaks notification messages (`follow_ups.notification`) |
 | PreToolUse (Bash) | Records command start time |
@@ -263,7 +268,9 @@ The older `messages.command_done` / `messages.idle_done` keys still work.
 | Stop | Extracts and speaks TTS_SUMMARY from responses (only when always-on summaries are enabled) |
 | Stop (idle) | Speaks `idle_done` after a period of inactivity |
 
-On-demand summaries don't go through a hook: the `speak` skill calls `scripts/speak.py --detach` directly.
+All speech from hooks plays in a background process, so a hook timeout never cuts a sentence off and a podcast-length summary doesn't hold anything up. On-demand summaries don't go through a hook: the `speak` skill calls `speak.py --detach` directly, and is pre-approved to run only that one command.
+
+Runtime state (the audio lock, running speakers, hook timestamps and logs) lives in a private `state/` folder inside the data directory, not in the shared system temp folder.
 
 ---
 
@@ -273,11 +280,11 @@ On-demand summaries don't go through a hook: the `speak` skill calls `scripts/sp
 
 1. Check system volume
 2. Run `/voice-summaries:init` if not done
-3. Check `<tempdir>/speak_summary_error.log`
+3. Check `state/speak_summary_error.log` in the plugin data directory
 
 ### Speech won't stop / something is stuck
 
-Run `/voice-summaries:speak stop`. Speakers wait their turn on a lock file in the temp directory; a lock left behind by a killed process is reclaimed automatically.
+Run `/voice-summaries:speak stop`. It stops everything that is playing or waiting to play. Speakers take turns using an operating-system file lock, which is released automatically if a speaker crashes, so nothing can get stuck holding it.
 
 ### Settings or install lost after an update
 
@@ -288,9 +295,9 @@ They shouldn't be: both live in the persistent data directory. If you previously
 From a development clone (without `CLAUDE_PLUGIN_DATA` set, the venv and config are read from the clone itself):
 
 ```bash
-.venv/bin/python scripts/speak.py "Hello, testing voice."
-echo "Long text..." | .venv/bin/python scripts/speak.py --detach   # background
-.venv/bin/python scripts/speak.py --stop
+python3 scripts/run_hook.py speak.py "Hello, testing voice."
+echo "Long text..." | python3 scripts/run_hook.py speak.py --detach   # background
+python3 scripts/run_hook.py speak.py --stop
 ```
 
 ---

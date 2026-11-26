@@ -1,11 +1,10 @@
-import tempfile
 
 from .paths import read_config, venv_python
 from .utils import clean_for_speech, download_kokoro_models
 
 __all__ = [
     "speak", "clean_for_speech", "download_kokoro_models",
-    "load_config", "get_tts", "TEMP_DIR", "venv_python", "follow_up",
+    "load_config", "get_tts", "venv_python", "follow_up",
 ]
 
 # Defaults for the spoken follow-ups that hooks fire without Claude's involvement.
@@ -25,8 +24,6 @@ FOLLOW_UP_DEFAULTS = {
     },
 }
 
-TEMP_DIR = tempfile.gettempdir()
-
 _LANG_MAP = {"fr": "fr-fr", "zh": "cmn", "pt": "pt-br"}
 
 
@@ -39,13 +36,31 @@ def load_config() -> dict:
 
 
 def follow_up(config: dict, name: str) -> dict:
-    """Resolved settings for one follow-up: defaults < legacy `messages` < `follow_ups`."""
-    settings = dict(FOLLOW_UP_DEFAULTS.get(name, {}))
-    legacy_message = config.get("messages", {}).get(name)
-    if legacy_message:
-        settings["message"] = legacy_message
-    settings.update(config.get("follow_ups", {}).get(name, {}))
+    """Resolved settings for one follow-up, with types coerced.
+
+    `config` comes from load_config(), which already layers the user's file
+    (including legacy `messages`) over the bundled defaults.
+    """
+    defaults = FOLLOW_UP_DEFAULTS.get(name, {})
+    settings = dict(defaults)
+    user = config.get("follow_ups", {}).get(name, {})
+    if isinstance(user, dict):
+        settings.update(user)
+    settings["enabled"] = _as_bool(settings.get("enabled", True))
+    if "threshold_seconds" in defaults:
+        try:
+            settings["threshold_seconds"] = float(settings["threshold_seconds"])
+        except (TypeError, ValueError):
+            settings["threshold_seconds"] = float(defaults["threshold_seconds"])
+    if "message" in defaults and not isinstance(settings.get("message"), str):
+        settings["message"] = defaults["message"]
     return settings
+
+
+def _as_bool(value) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() not in ("false", "0", "no", "off", "")
+    return bool(value)
 
 
 def get_tts(config: dict):

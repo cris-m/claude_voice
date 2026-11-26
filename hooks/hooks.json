@@ -24,6 +24,18 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/record_prompt.py\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "",
@@ -32,7 +44,7 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_notification.py",
             "async": true,
-            "timeout": 120
+            "timeout": 30
           }
         ]
       }
@@ -57,7 +69,7 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_command_done.py",
             "async": true,
-            "timeout": 120
+            "timeout": 30
           }
         ]
       }
@@ -70,13 +82,13 @@
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_summary.py",
             "async": true,
-            "timeout": 120
+            "timeout": 30
           },
           {
             "type": "command",
             "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py\" speak_idle_done.py",
             "async": true,
-            "timeout": 180
+            "timeout": 600
           }
         ]
       }

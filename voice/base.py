@@ -1,52 +1,13 @@
 import os
-import tempfile
-import time
 from abc import ABC, abstractmethod
 from typing import Iterable, Tuple
 
-AUDIO_LOCK_FILE = os.path.join(tempfile.gettempdir(), "claude_voice_audio.lock")
+from .paths import FileLock, state_dir
 
 
-def _holder_alive(lock_path: str) -> bool:
-    try:
-        with open(lock_path) as f:
-            pid = int(f.read().strip())
-    except (OSError, ValueError):
-        # Unreadable or empty: may be mid-write, so only treat it as stale if old.
-        try:
-            return time.time() - os.path.getmtime(lock_path) < 5
-        except OSError:
-            return False
-    try:
-        os.kill(pid, 0)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        return True
-
-
-def acquire_lock() -> str:
-    lock_path = AUDIO_LOCK_FILE + ".lck"
-    while True:
-        try:
-            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.write(fd, str(os.getpid()).encode())
-            os.close(fd)
-            return lock_path
-        except FileExistsError:
-            # A speaker killed mid-playback leaves its lock behind; reclaim it.
-            if not _holder_alive(lock_path):
-                release_lock(lock_path)
-                continue
-            time.sleep(0.05)
-
-
-def release_lock(lock_path: str) -> None:
-    try:
-        os.unlink(lock_path)
-    except OSError:
-        pass
+def audio_lock() -> FileLock:
+    """Serialises playback so two speakers never talk over each other."""
+    return FileLock(os.path.join(state_dir(), "audio.lock"))
 
 
 def _to_float32(samples):
@@ -83,7 +44,8 @@ class BaseTTS(ABC):
         if len(samples) == 0:
             return
 
-        lock_path = acquire_lock()
+        lock = audio_lock()
+        lock.acquire()
         try:
             sd.play(samples, sample_rate)
             sd.wait()
@@ -91,7 +53,7 @@ class BaseTTS(ABC):
             sd.stop()  # interrupted (e.g. speak.py --stop): cut audio now
             raise
         finally:
-            release_lock(lock_path)
+            lock.release()
 
     def _play_stream(self, chunks: Iterable[Tuple[object, int]]) -> None:
         """Play (samples, sample_rate) chunks as they arrive.
@@ -102,7 +64,7 @@ class BaseTTS(ABC):
         import sounddevice as sd
 
         stream = None
-        lock_path = None
+        lock = None
         interrupted = False
         try:
             for samples, sample_rate in chunks:
@@ -110,7 +72,8 @@ class BaseTTS(ABC):
                 if len(samples) == 0:
                     continue
                 if stream is None:
-                    lock_path = acquire_lock()
+                    lock = audio_lock()
+                    lock.acquire()
                     stream = sd.OutputStream(
                         samplerate=sample_rate, channels=1, dtype="float32"
                     )
@@ -131,5 +94,5 @@ class BaseTTS(ABC):
                 else:
                     stream.stop()  # blocks until buffered audio has played
                 stream.close()
-            if lock_path is not None:
-                release_lock(lock_path)
+            if lock is not None:
+                lock.release()

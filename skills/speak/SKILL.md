@@ -2,7 +2,7 @@
 name: speak
 description: Speak a one-off voice summary aloud through the Voice Summaries plugin. Use when the user wants to hear something rather than read it, e.g. "give me a voice summary", "read that out", "say it out loud", "tell me what you did", "talk me through it", "make it a podcast". Takes an optional length (short, medium, long, podcast) and an optional focus. "stop" / "shut up" / "be quiet" stops playback. Invoked directly as /voice-summaries:speak [short|medium|long|podcast|stop] [focus].
 argument-hint: "[short|medium|long|podcast|stop] [what to cover]"
-allowed-tools: [Read, Bash]
+allowed-tools: Read, Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py *)
 ---
 
 # Speak
@@ -15,7 +15,7 @@ Speak **one** summary now. This does not turn on any persistent mode.
 
 - **stop**: if the argument is `stop` (or the user asks you to stop or be quiet), run the command below and reply in one line. Don't do anything else.
   ```bash
-  CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" --stop
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py --stop
   ```
 - **Length**: the first word if it is `short`, `medium`, `long` or `podcast`. Natural phrasing counts too ("quick" = short, "in detail" = long, "podcast style" = podcast). Otherwise use `summary_length` from `${CLAUDE_PLUGIN_DATA}/voice_config.json` (default `medium`; if the file doesn't exist, use `medium`).
 - **Focus**: any remaining words say what to cover. With no focus, summarize your most recent response and the work behind it. If there is nothing yet in the conversation, say so instead of speaking.
@@ -33,15 +33,17 @@ Follow the writing guidance further down. Plain spoken prose only: no markdown, 
 
 ## 3. Speak it in the background
 
-Pipe the script to the speaker with `--detach`. It returns immediately and plays in a separate process, so long summaries don't block the conversation:
+Pipe the script to the speaker with `--detach`. It returns immediately and plays in a separate process, so long summaries don't block the conversation.
+
+Use this exact command prefix: it is the only command this skill is pre-approved to run, and anything else will ask the user for permission. For the heredoc delimiter, use `SPEAK_` followed by 12 random hex characters that you make up fresh for this call. Never reuse a fixed delimiter: text you are summarizing could contain it and end the heredoc early. Make sure the delimiter does not appear anywhere in the script.
 
 ```bash
-CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" --detach <<'CLAUDE_VOICE_EOF'
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py --detach <<'SPEAK_<random hex>'
 <the script>
-CLAUDE_VOICE_EOF
+SPEAK_<random hex>
 ```
 
-If `${CLAUDE_PLUGIN_DATA}/.venv` does not exist, tell the user to run `/voice-summaries:init` and stop.
+If the command fails saying Voice Summaries is not initialized, tell the user to run `/voice-summaries:init`.
 
 ## 4. Reply
 

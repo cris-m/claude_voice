@@ -6,7 +6,8 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech, load_config, follow_up
+from voice import clean_for_speech, load_config, follow_up
+from voice.speaker import speak_detached
 
 if __name__ == "__main__":
     try:
@@ -19,6 +20,6 @@ if __name__ == "__main__":
             message = message.replace("Claude needs", "I need")
             message = message.replace("Claude is", "I am")
             message = message.replace("Claude", "I")
-            speak(message)
+            speak_detached(message)
     except Exception:
         pass

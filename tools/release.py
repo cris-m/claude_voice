@@ -45,6 +45,12 @@ def main() -> None:
         fail("working tree is not clean; commit or stash first")
     if git("tag", "--list", tag):
         fail(f"tag {tag} already exists")
+    if push:
+        git("fetch", "origin", "main", "--tags")
+        if git("rev-parse", "HEAD") != git("rev-parse", "origin/main"):
+            fail("local main differs from origin/main; pull or push first")
+        if git("ls-remote", "--tags", "origin", f"refs/tags/{tag}"):
+            fail(f"tag {tag} already exists on origin")
 
     plugin = json.loads(PLUGIN_JSON.read_text())
     current = plugin.get("version", "0.0.0")
@@ -63,10 +69,18 @@ def main() -> None:
     print(f"Committed and tagged {tag} (was {current}).")
 
     if push:
-        git("push", "origin", "main", tag)
+        # Atomic: either main and the tag both land, or neither does, so a
+        # release can never point at a commit that isn't on main.
+        try:
+            git("push", "--atomic", "origin", "main", tag)
+        except subprocess.CalledProcessError as e:
+            fail(
+                f"push rejected, nothing was pushed:\n{e.stderr.strip()}\n"
+                f"Undo locally with: git tag -d {tag} && git reset --hard HEAD~1"
+            )
         print(f"Pushed main and {tag}.")
     else:
-        print(f"Push with: git push origin main {tag}")
+        print(f"Push with: git push --atomic origin main {tag}")
 
 
 if __name__ == "__main__":

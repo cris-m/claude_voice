@@ -6,6 +6,9 @@ from .base import BaseTTS
 from .utils import download_kokoro_models
 
 _DONE = object()
+# If generation produces nothing for this long, give up rather than hold the
+# audio lock forever. kokoro-onnx's create_stream can hang if a batch fails.
+STALL_TIMEOUT = 60
 
 
 class KokoroTTS(BaseTTS):
@@ -65,7 +68,10 @@ class KokoroTTS(BaseTTS):
 
         def chunks():
             while True:
-                item = q.get()
+                try:
+                    item = q.get(timeout=STALL_TIMEOUT)
+                except queue.Empty:
+                    raise TimeoutError("Kokoro stream stalled")
                 if item is _DONE:
                     return
                 if isinstance(item, Exception):

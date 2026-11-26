@@ -55,7 +55,7 @@ For MLX, also run:
 uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" --upgrade mlx-audio mlx-lm numpy transformers
 ```
 
-Pip fallback if `uv` isn't available (macOS/Linux; on Windows use `Scripts\pip`). This installs a copy of the package as well, which is harmless because the scripts load the code from the plugin root first:
+Pip fallback if `uv` isn't available. On Windows the venv's pip is `.venv\Scripts\pip.exe` instead of `.venv/bin/pip`. This installs a copy of the package as well, which is harmless because the scripts load the code from the plugin root first:
 ```bash
 python3 -m venv "${CLAUDE_PLUGIN_DATA}/.venv" && "${CLAUDE_PLUGIN_DATA}/.venv/bin/pip" install "${CLAUDE_PLUGIN_ROOT}[$EXTRA]"
 ```
@@ -70,7 +70,7 @@ Update the `provider` field in `${CLAUDE_PLUGIN_DATA}/voice_config.json` (copy i
 
 Run the test speak script:
 ```bash
-CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" "Initialization complete. Voice is ready."
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py "Initialization complete. Voice is ready."
 ```
 
 **This test will also trigger the model download** — so it may take a few minutes the first time. That is expected. Wait until you hear the audio before proceeding.

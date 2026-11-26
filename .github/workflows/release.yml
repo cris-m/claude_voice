@@ -12,6 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Later steps run third-party code; don't leave a write token in .git.
+          persist-credentials: false
 
       - name: Check the tag matches plugin.json
         run: |
@@ -22,7 +25,8 @@ jobs:
           fi
 
       - name: Validate the plugin
-        run: npx -y @anthropic-ai/claude-code plugin validate .
+        # Pinned: an unpinned package would run whatever is latest at release time.
+        run: npx -y @anthropic-ai/claude-code@2.1.332 plugin validate --strict .
 
       - name: Create GitHub release
         env:

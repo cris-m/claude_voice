@@ -3,10 +3,14 @@
 import sys
 import os
 import json
-import tempfile
 from datetime import datetime
 
-DEBUG_FILE = os.path.join(tempfile.gettempdir(), "claude_hook_debug.json")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from voice.paths import state_dir
+
+# Not wired into hooks.json by default: it records full hook payloads.
+DEBUG_FILE = os.path.join(state_dir(), "hook_debug.json")
 
 def main():
     try:
