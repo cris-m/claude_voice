@@ -1,20 +1,20 @@
 {
-  "name": "havekes-claude_voice",
+  "name": "havekes",
   "owner": {
     "name": "havekes"
   },
   "metadata": {
-    "description": "Voice Summaries (havekes fork) - TTS audio feedback for Claude Code"
+    "description": "havekes's Claude Code plugins"
   },
   "plugins": [
     {
-      "name": "voice-summaries",
+      "name": "voice-summary",
       "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
       "author": {
         "name": "cris-m"
       },
       "source": "./",
-      "homepage": "https://github.com/havekes/claude_voice"
+      "homepage": "https://github.com/havekes/voice-summary"
     }
   ]
 }

@@ -30,7 +30,7 @@ Check which provider is currently configured. Ask if they want to change it.
 - **Chatterbox** — Higher quality, emotion control (exaggeration, cfg_weight), voice cloning from audio. Best for expressive speech.
 - **MLX-Audio** (macOS Apple Silicon only) — Qwen3-TTS, emotion via text instructions, fastest on M-series chips. Best for natural assistant voice.
 
-If they switch providers, tell them to re-run `/voice-summaries:init` to install the correct dependencies.
+If they switch providers, tell them to re-run `/voice-summary:init` to install the correct dependencies.
 
 ---
 
@@ -169,7 +169,7 @@ Offer presets:
 
 ### Step 5c: Summary length
 
-Ask for the default `summary_length`: `short` (1-2 sentences), `medium` (3-6 sentences, default), `long` (2-4 paragraphs) or `podcast` (4-8 minute segment). It's used by `/voice-summaries:speak` when no length is given, and by always-on summaries.
+Ask for the default `summary_length`: `short` (1-2 sentences), `medium` (3-6 sentences, default), `long` (2-4 paragraphs) or `podcast` (4-8 minute segment). It's used by `/voice-summary:speak` when no length is given, and by always-on summaries.
 
 ---
 

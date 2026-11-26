@@ -44,7 +44,7 @@ def main():
     python_path = venv_python()
     if not os.path.isfile(python_path):
         if explicit_data:
-            print("Voice Summaries is not initialized. Run /voice-summaries:init first.", file=sys.stderr)
+            print("Voice Summary is not initialized. Run /voice-summary:init first.", file=sys.stderr)
         sys.exit(1)
 
     # The child inherits stdin and reads it only if it needs to: reading it

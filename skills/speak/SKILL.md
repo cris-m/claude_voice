@@ -1,6 +1,6 @@
 ---
 name: speak
-description: Speak a one-off voice summary aloud through the Voice Summaries plugin. Use when the user wants to hear something rather than read it, e.g. "give me a voice summary", "read that out", "say it out loud", "tell me what you did", "talk me through it", "make it a podcast". Takes an optional length (short, medium, long, podcast) and an optional focus. "stop" / "shut up" / "be quiet" stops playback. Invoked directly as /voice-summaries:speak [short|medium|long|podcast|stop] [focus].
+description: Speak a one-off voice summary aloud through the Voice Summary plugin. Use when the user wants to hear something rather than read it, e.g. "give me a voice summary", "read that out", "say it out loud", "tell me what you did", "talk me through it", "make it a podcast". Takes an optional length (short, medium, long, podcast) and an optional focus. "stop" / "shut up" / "be quiet" stops playback. Invoked directly as /voice-summary:speak [short|medium|long|podcast|stop] [focus].
 argument-hint: "[short|medium|long|podcast|stop] [what to cover]"
 allowed-tools: Read, Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py *)
 ---
@@ -43,11 +43,11 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA
 SPEAK_<random hex>
 ```
 
-If the command fails saying Voice Summaries is not initialized, tell the user to run `/voice-summaries:init`.
+If the command fails saying Voice Summary is not initialized, tell the user to run `/voice-summary:init`.
 
 ## 4. Reply
 
-One short line saying what you're speaking and at which length (for `long` or `podcast`, mention `/voice-summaries:speak stop`). Don't repeat the script in the chat, and don't add a TTS_SUMMARY block to this reply even if always-on summaries are enabled, or it would be spoken twice.
+One short line saying what you're speaking and at which length (for `long` or `podcast`, mention `/voice-summary:speak stop`). Don't repeat the script in the chat, and don't add a TTS_SUMMARY block to this reply even if always-on summaries are enabled, or it would be spoken twice.
 
 ---
 

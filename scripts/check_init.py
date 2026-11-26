@@ -8,4 +8,4 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from voice.paths import venv_python
 
 if not os.path.isfile(venv_python()):
-    print("Voice Summaries is not initialized yet. Run /voice-summaries:init to install dependencies and enable voice hooks.")
+    print("Voice Summary is not initialized yet. Run /voice-summary:init to install dependencies and enable voice hooks.")

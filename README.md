@@ -1,4 +1,4 @@
-# Voice Summaries
+# Voice Summary
 
 Text-to-speech for Claude Code — hear responses, notifications, and command completions spoken aloud.
 
@@ -8,7 +8,7 @@ Text-to-speech for Claude Code — hear responses, notifications, and command co
 
 ## What Is This?
 
-Voice Summaries adds audio feedback to Claude Code:
+Voice Summary adds audio feedback to Claude Code:
 
 - **Voice summaries on demand** — ask for a spoken summary when you want one, from a one-liner to a podcast-style walkthrough
 - **Always-on summaries** (optional) — Claude speaks a summary after every response
@@ -32,14 +32,14 @@ Supports three TTS providers:
 ## Project Structure
 
 ```
-claude_voice/
+voice-summary/
 ├── commands/
-│   ├── init.md              # /voice-summaries:init
-│   ├── config.md            # /voice-summaries:config
-│   └── tts-summary.md       # /voice-summaries:tts-summary (always-on)
+│   ├── init.md              # /voice-summary:init
+│   ├── config.md            # /voice-summary:config
+│   └── tts-summary.md       # /voice-summary:tts-summary (always-on)
 ├── skills/
 │   └── speak/
-│       └── SKILL.md         # /voice-summaries:speak, or "give me a voice summary"
+│       └── SKILL.md         # /voice-summary:speak, or "give me a voice summary"
 ├── hooks/
 │   └── hooks.json
 ├── scripts/
@@ -87,27 +87,27 @@ claude_voice/
 ### From GitHub
 
 ```
-/plugin marketplace add havekes/claude_voice
-/plugin install voice-summaries@havekes-claude_voice
-/voice-summaries:init
+/plugin marketplace add havekes/voice-summary
+/plugin install voice-summary@havekes
+/voice-summary:init
 ```
 
 ### From local clone
 
 ```bash
-git clone https://github.com/havekes/claude_voice.git
+git clone https://github.com/havekes/voice-summary.git
 ```
 
 ```
-/plugin marketplace add /path/to/claude_voice
-/plugin install voice-summaries@havekes-claude_voice --scope local
-/voice-summaries:init
+/plugin marketplace add /path/to/voice-summary
+/plugin install voice-summary@havekes --scope local
+/voice-summary:init
 ```
 
 ### For development
 
 ```bash
-claude --plugin-dir /path/to/claude_voice
+claude --plugin-dir /path/to/voice-summary
 ```
 
 ---
@@ -117,7 +117,7 @@ claude --plugin-dir /path/to/claude_voice
 ### 1. Initialize (required)
 
 ```
-/voice-summaries:init
+/voice-summary:init
 ```
 
 This detects your platform, lets you choose a provider, creates a virtualenv in the plugin's data directory, and installs dependencies. On Apple Silicon, it recommends MLX-Audio automatically.
@@ -125,7 +125,7 @@ This detects your platform, lets you choose a provider, creates a virtualenv in 
 ### 2. Configure voice (optional)
 
 ```
-/voice-summaries:config
+/voice-summary:config
 ```
 
 Interactive wizard for speaker, style, speed, default summary length, streaming, and follow-up messages.
@@ -133,8 +133,8 @@ Interactive wizard for speaker, style, speed, default summary length, streaming,
 ### 3. Voice summaries on demand
 
 ```
-/voice-summaries:speak [short|medium|long|podcast] [what to cover]
-/voice-summaries:speak stop
+/voice-summary:speak [short|medium|long|podcast] [what to cover]
+/voice-summary:speak stop
 ```
 
 Each invocation speaks one summary, by default of Claude's latest response; add words after the length to choose what it covers. Because it's a skill, you can also just ask: "give me a quick voice summary", "talk me through the refactor, podcast style", "be quiet". Audio plays in the background, so even a podcast doesn't block the conversation.
@@ -151,7 +151,7 @@ With no length given, `summary_length` from the config is used. Claude writes th
 ### 4. Always-on summaries (optional)
 
 ```
-/voice-summaries:tts-summary [on|off]
+/voice-summary:tts-summary [on|off]
 ```
 
 Ends every response with a spoken summary at `summary_length`. Off by default in this fork (`tts_summary_enabled: false`); turning it off takes effect immediately, since the Stop hook checks the flag before speaking.
@@ -259,7 +259,7 @@ The older `messages.command_done` / `messages.idle_done` keys still work.
 
 | Hook | What it does |
 |------|-------------|
-| SessionStart | Checks the virtualenv exists, reminds to run `/voice-summaries:init` |
+| SessionStart | Checks the virtualenv exists, reminds to run `/voice-summary:init` |
 | UserPromptSubmit | Records when you last sent a message (used by the idle follow-up) |
 | InstructionsLoaded | When always-on summaries are enabled, injects the summary instruction at `summary_length` (survives context compression) |
 | Notification | Speaks notification messages (`follow_ups.notification`) |
@@ -279,16 +279,16 @@ Runtime state (the audio lock, running speakers, hook timestamps and logs) lives
 ### No audio
 
 1. Check system volume
-2. Run `/voice-summaries:init` if not done
+2. Run `/voice-summary:init` if not done
 3. Check `state/speak_summary_error.log` in the plugin data directory
 
 ### Speech won't stop / something is stuck
 
-Run `/voice-summaries:speak stop`. It stops everything that is playing or waiting to play. Speakers take turns using an operating-system file lock, which is released automatically if a speaker crashes, so nothing can get stuck holding it.
+Run `/voice-summary:speak stop`. It stops everything that is playing or waiting to play. Speakers take turns using an operating-system file lock, which is released automatically if a speaker crashes, so nothing can get stuck holding it.
 
 ### Settings or install lost after an update
 
-They shouldn't be: both live in the persistent data directory. If you previously used the original plugin, its `.venv` and `voice_config.json` were inside the install folder and were not carried over. Run `/voice-summaries:init` once, then `/voice-summaries:config`.
+They shouldn't be: both live in the persistent data directory. If you previously used the original plugin, its `.venv` and `voice_config.json` were inside the install folder and were not carried over. Run `/voice-summary:init` once, then `/voice-summary:config`.
 
 ### Test manually
 
@@ -312,7 +312,7 @@ python3 tools/release.py 0.3.0 --push
 
 The script must run on a clean `main`. It sets the version in `plugin.json` and `pyproject.toml`, commits, creates the `v0.3.0` tag, and pushes both. When the tag lands, the release workflow checks that it matches `plugin.json`, runs `claude plugin validate`, and creates a GitHub release with generated notes.
 
-Users get the update with `/plugin` → Update, or `claude plugin update voice-summaries@havekes-claude_voice`. To stay on a specific release, add the marketplace at its tag: `/plugin marketplace add havekes/claude_voice#v0.3.0`.
+Users get the update with `/plugin` → Update, or `claude plugin update voice-summary@havekes`. To stay on a specific release, add the marketplace at its tag: `/plugin marketplace add havekes/voice-summary#v0.3.0`.
 
 ### Anthropic plugin directory
 
@@ -323,7 +323,7 @@ Run `claude plugin validate --strict .`, then submit through the developer porta
 ## Uninstall
 
 ```
-/plugin uninstall voice-summaries@havekes-claude_voice
+/plugin uninstall voice-summary@havekes
 ```
 
 ---

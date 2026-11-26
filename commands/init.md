@@ -3,7 +3,7 @@ description: Create the virtualenv and install Python packages required for voic
 allowed-tools: [Bash, Read, Glob, Write, Edit, AskUserQuestion]
 ---
 
-# Initialize Voice Summaries
+# Initialize Voice Summary
 
 Create the Python virtual environment and install all required packages. This must run once after installing the plugin — hooks will not work until this completes.
 
@@ -101,6 +101,6 @@ Once the virtualenv exists, all hooks defined in `hooks/hooks.json` become activ
 
 ## Next steps
 
-- Run `/voice-summaries:config` to choose your voice, speed, and language
-- Run `/voice-summaries:speak` (or ask "give me a voice summary") for a one-off spoken summary
-- Run `/voice-summaries:tts-summary` to speak a summary after every response
+- Run `/voice-summary:config` to choose your voice, speed, and language
+- Run `/voice-summary:speak` (or ask "give me a voice summary") for a one-off spoken summary
+- Run `/voice-summary:tts-summary` to speak a summary after every response

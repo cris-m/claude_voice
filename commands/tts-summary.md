@@ -1,5 +1,5 @@
 ---
-description: Enable or disable always-on spoken summaries at the end of every response (for a one-off summary use /voice-summaries:speak)
+description: Enable or disable always-on spoken summaries at the end of every response (for a one-off summary use /voice-summary:speak)
 argument-hint: "[on|off]"
 allowed-tools: [Read, Write, Edit]
 ---

@@ -1,11 +1,11 @@
 {
-  "name": "voice-summaries",
+  "name": "voice-summary",
   "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
   "version": "0.2.0",
   "author": {
     "name": "cris-m"
   },
-  "homepage": "https://github.com/havekes/claude_voice",
+  "homepage": "https://github.com/havekes/voice-summary",
   "icon": ".claude-plugin/icon.png",
   "network": {
     "hosts": [
