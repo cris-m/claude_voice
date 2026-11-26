@@ -1,9 +1,20 @@
 {
-  "name": "claude-voice",
-  "description": "Adds spoken audio summaries and notifications via Kokoro TTS",
-  "version": "0.1.0",
+  "name": "voice-summaries",
+  "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
+  "version": "0.2.0",
   "author": {
     "name": "cris-m"
   },
-  "homepage": "https://github.com/cris-m/claude_voice"
+  "homepage": "https://github.com/havekes/claude_voice",
+  "icon": ".claude-plugin/icon.png",
+  "network": {
+    "hosts": [
+      "github.com",
+      "objects.githubusercontent.com",
+      "huggingface.co",
+      "cdn-lfs.huggingface.co",
+      "pypi.org",
+      "files.pythonhosted.org"
+    ]
+  }
 }

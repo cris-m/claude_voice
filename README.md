@@ -1,17 +1,23 @@
-# Claude Voice
+# Voice Summaries
 
 Text-to-speech for Claude Code — hear responses, notifications, and command completions spoken aloud.
+
+> Fork of [cris-m/claude_voice](https://github.com/cris-m/claude_voice) that adds on-demand voice summaries with selectable length, streaming playback, and configurable follow-up messages.
 
 ---
 
 ## What Is This?
 
-Claude Voice adds audio feedback to Claude Code:
+Voice Summaries adds audio feedback to Claude Code:
 
-- **Response summaries** — Claude speaks a summary of what it did
+- **Voice summaries on demand** — ask for a spoken summary when you want one, from a one-liner to a podcast-style walkthrough
+- **Always-on summaries** (optional) — Claude speaks a summary after every response
+- **Streaming playback** — speech starts while the rest is still being generated (Kokoro, MLX-Audio)
 - **Notifications** — Claude speaks when it needs your attention
 - **Command completion** — Hear when long-running terminal commands finish
 - **Idle alerts** — Get notified if you've been away after Claude finishes
+
+Notifications, command completion and idle alerts are *follow-ups*: each can be turned on or off, with its own message and timing.
 
 Supports three TTS providers:
 
@@ -28,16 +34,19 @@ Supports three TTS providers:
 ```
 claude_voice/
 ├── commands/
-│   ├── init.md              # /claude-voice:init
-│   ├── config.md            # /claude-voice:config
-│   └── tts-summary.md       # /claude-voice:tts-summary
+│   ├── init.md              # /voice-summaries:init
+│   ├── config.md            # /voice-summaries:config
+│   └── tts-summary.md       # /voice-summaries:tts-summary (always-on)
+├── skills/
+│   └── speak/
+│       └── SKILL.md         # /voice-summaries:speak, or "give me a voice summary"
 ├── hooks/
 │   └── hooks.json
 ├── scripts/
 │   ├── check_init.py
 │   ├── inject_tts_instruction.py
 │   ├── record_command_start.py
-│   ├── speak.py
+│   ├── speak.py             # speak text; --detach / --stop for background playback
 │   ├── speak_command_done.py
 │   ├── speak_idle_done.py
 │   ├── speak_notification.py
@@ -45,13 +54,19 @@ claude_voice/
 │   └── debug_hook.py
 ├── voice/
 │   ├── __init__.py          # Provider factory
-│   ├── base.py              # Abstract base class + audio locking
+│   ├── base.py              # Abstract base class, streaming playback, audio locking
+│   ├── lengths.py           # Summary length definitions (short … podcast)
 │   ├── kokoro_tts.py         # Kokoro ONNX provider
 │   ├── chatterbox_tts.py     # Chatterbox provider
 │   ├── mlx_tts.py            # MLX-Audio provider
+│   ├── paths.py             # Where the venv and config live (persistent data dir)
 │   └── utils.py
+├── tools/
+│   └── release.py           # Bump version, commit, tag vX.Y.Z
+├── .github/workflows/
+│   └── release.yml          # On tag push: check version, validate, create GitHub release
 ├── pyproject.toml
-├── voice_config.json
+├── voice_config.json        # Default settings (copied to your data dir on first use)
 └── README.md
 ```
 
@@ -68,21 +83,21 @@ claude_voice/
 ### From GitHub
 
 ```
-/plugin marketplace add cris-m/claude_voice
-/plugin install claude-voice@cris-m-claude_voice
-/claude-voice:init
+/plugin marketplace add havekes/claude_voice
+/plugin install voice-summaries@havekes-claude_voice
+/voice-summaries:init
 ```
 
 ### From local clone
 
 ```bash
-git clone https://github.com/cris-m/claude_voice.git
+git clone https://github.com/havekes/claude_voice.git
 ```
 
 ```
 /plugin marketplace add /path/to/claude_voice
-/plugin install claude-voice@cris-m-claude_voice --scope local
-/claude-voice:init
+/plugin install voice-summaries@havekes-claude_voice --scope local
+/voice-summaries:init
 ```
 
 ### For development
@@ -98,38 +113,63 @@ claude --plugin-dir /path/to/claude_voice
 ### 1. Initialize (required)
 
 ```
-/claude-voice:init
+/voice-summaries:init
 ```
 
-This detects your platform, lets you choose a provider, creates `.venv`, and installs dependencies. On Apple Silicon, it recommends MLX-Audio automatically.
+This detects your platform, lets you choose a provider, creates a virtualenv in the plugin's data directory, and installs dependencies. On Apple Silicon, it recommends MLX-Audio automatically.
 
 ### 2. Configure voice (optional)
 
 ```
-/claude-voice:config
+/voice-summaries:config
 ```
 
-Interactive wizard for speaker, style, speed, and notification messages.
+Interactive wizard for speaker, style, speed, default summary length, streaming, and follow-up messages.
 
-### 3. Enable spoken summaries (optional)
+### 3. Voice summaries on demand
 
 ```
-/claude-voice:tts-summary
+/voice-summaries:speak [short|medium|long|podcast] [what to cover]
+/voice-summaries:speak stop
 ```
+
+Each invocation speaks one summary, by default of Claude's latest response; add words after the length to choose what it covers. Because it's a skill, you can also just ask: "give me a quick voice summary", "talk me through the refactor, podcast style", "be quiet". Audio plays in the background, so even a podcast doesn't block the conversation.
+
+| Length | Roughly |
+|--------|---------|
+| `short` | 1-2 sentences, ~15s |
+| `medium` | 3-6 sentences, ~45s (default) |
+| `long` | 2-4 paragraphs, 1.5-3 min |
+| `podcast` | single-host segment, 4-8 min |
+
+With no length given, `summary_length` from the config is used. Claude writes the script and hands it to the speaker in a background process, then replies with a single line. The script isn't repeated in the chat.
+
+### 4. Always-on summaries (optional)
+
+```
+/voice-summaries:tts-summary [on|off]
+```
+
+Ends every response with a spoken summary at `summary_length`. Off by default in this fork (`tts_summary_enabled: false`); turning it off takes effect immediately, since the Stop hook checks the flag before speaking.
 
 ---
 
 ## Configuration
 
-All settings in `voice_config.json`:
+Your settings live in `~/.claude/plugins/data/<plugin-id>/voice_config.json` (Claude Code's `${CLAUDE_PLUGIN_DATA}` directory), next to the plugin's virtualenv. That directory survives plugin updates, unlike the plugin's install folder. It's created from the bundled defaults the first time the plugin runs. Settings added in later versions take their defaults automatically, so you only need to keep what you've changed.
+
+The full set of settings:
 
 ```json
 {
   "provider": "kokoro",
-  "tts_summary_enabled": true,
-  "messages": {
-    "command_done": "All finished! What's next?",
-    "idle_done": "Just a heads up, everything's wrapped up on my end. Take your time!"
+  "tts_summary_enabled": false,
+  "summary_length": "medium",
+  "streaming": true,
+  "follow_ups": {
+    "command_done": { "enabled": true, "threshold_seconds": 30, "message": "All finished! What's next?" },
+    "idle_done": { "enabled": true, "threshold_seconds": 60, "message": "Just a heads up, everything's wrapped up on my end. Take your time!" },
+    "notification": { "enabled": true }
   },
   "kokoro": {
     "voice": "am_michael",
@@ -147,12 +187,39 @@ All settings in `voice_config.json`:
     "model": "mlx-community/Qwen3-TTS-12Hz-0.6B-CustomVoice-bf16",
     "voice": "Ryan",
     "language": "en",
-    "instruct": "warm"
+    "instruct": "warm",
+    "streaming_interval": 1.0
   }
 }
 ```
 
 Each provider has its own block. Only the active provider's block is used.
+
+### Top-level settings
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `provider` | `kokoro` | `kokoro`, `chatterbox` or `mlx` |
+| `tts_summary_enabled` | `false` | Always-on summaries after every response |
+| `summary_length` | `medium` | Default length: `short`, `medium`, `long` or `podcast` |
+| `streaming` | `true` | Play audio while it is being generated, where supported |
+| `follow_ups` | all on | See below |
+
+### Streaming
+
+With `"streaming": true` (the default), audio starts playing while the rest is still being generated. Kokoro and MLX-Audio support this. Chatterbox has no streaming API and always generates the full clip first. Set it to `false` to always generate the whole clip before playing.
+
+### Follow-ups
+
+`follow_ups` controls the messages hooks speak without Claude's involvement. Each one can be turned off with `"enabled": false`.
+
+| Key | Fires when | Notes |
+|-----|-----------|-------|
+| `command_done` | A Bash command ran longer than `threshold_seconds` | |
+| `idle_done` | No activity for `threshold_seconds` after Claude stops, and no summary was spoken | Capped at 170s by the hook timeout |
+| `notification` | Claude Code raises a notification | |
+
+The older `messages.command_done` / `messages.idle_done` keys still work.
 
 ### MLX-Audio settings
 
@@ -161,6 +228,7 @@ Each provider has its own block. Only the active provider's block is used.
 | `model` | HuggingFace model ID |
 | `voice` | Speaker: `Ryan` (clear) or `Aiden` (expressive) |
 | `language` | Language code |
+| `streaming_interval` | Seconds of audio per streamed chunk (default `1.0`); lower starts sooner |
 | `instruct` | Voice style — any natural description (e.g. `"warm"`, `"enthusiastic and energetic"`, `"calm, clear, professional"`) |
 
 ### Chatterbox settings
@@ -187,13 +255,15 @@ Each provider has its own block. Only the active provider's block is used.
 
 | Hook | What it does |
 |------|-------------|
-| SessionStart | Checks `.venv` exists, reminds to run `/claude-voice:init` |
-| InstructionsLoaded | Injects TTS summary instruction (survives context compression) |
-| Notification | Speaks notification messages |
+| SessionStart | Checks the virtualenv exists, reminds to run `/voice-summaries:init` |
+| InstructionsLoaded | When always-on summaries are enabled, injects the summary instruction at `summary_length` (survives context compression) |
+| Notification | Speaks notification messages (`follow_ups.notification`) |
 | PreToolUse (Bash) | Records command start time |
-| PostToolUse (Bash) | Speaks notification after commands 30s+ |
-| Stop | Extracts and speaks TTS_SUMMARY from responses |
-| Stop (idle) | Alerts after 60s idle post-completion |
+| PostToolUse (Bash) | Speaks `command_done` after long commands |
+| Stop | Extracts and speaks TTS_SUMMARY from responses (only when always-on summaries are enabled) |
+| Stop (idle) | Speaks `idle_done` after a period of inactivity |
+
+On-demand summaries don't go through a hook: the `speak` skill calls `scripts/speak.py --detach` directly.
 
 ---
 
@@ -202,29 +272,51 @@ Each provider has its own block. Only the active provider's block is used.
 ### No audio
 
 1. Check system volume
-2. Run `/claude-voice:init` if not done
+2. Run `/voice-summaries:init` if not done
 3. Check `<tempdir>/speak_summary_error.log`
 
-### Wrong voice / old config
+### Speech won't stop / something is stuck
 
-The plugin cache may have a stale `voice_config.json`. After changing config, sync it:
+Run `/voice-summaries:speak stop`. Speakers wait their turn on a lock file in the temp directory; a lock left behind by a killed process is reclaimed automatically.
 
-```bash
-cp voice_config.json ~/.claude/plugins/cache/cris-m-claude_voice/claude-voice/*/voice_config.json
-```
+### Settings or install lost after an update
+
+They shouldn't be: both live in the persistent data directory. If you previously used the original plugin, its `.venv` and `voice_config.json` were inside the install folder and were not carried over. Run `/voice-summaries:init` once, then `/voice-summaries:config`.
 
 ### Test manually
 
+From a development clone (without `CLAUDE_PLUGIN_DATA` set, the venv and config are read from the clone itself):
+
 ```bash
 .venv/bin/python scripts/speak.py "Hello, testing voice."
+echo "Long text..." | .venv/bin/python scripts/speak.py --detach   # background
+.venv/bin/python scripts/speak.py --stop
 ```
+
+---
+
+## Releasing
+
+Claude Code reads the version from `.claude-plugin/plugin.json` and only offers users an update when it changes. Releases are git tags that always match that version:
+
+```bash
+python3 tools/release.py 0.3.0 --push
+```
+
+The script must run on a clean `main`. It sets the version in `plugin.json` and `pyproject.toml`, commits, creates the `v0.3.0` tag, and pushes both. When the tag lands, the release workflow checks that it matches `plugin.json`, runs `claude plugin validate`, and creates a GitHub release with generated notes.
+
+Users get the update with `/plugin` → Update, or `claude plugin update voice-summaries@havekes-claude_voice`. To stay on a specific release, add the marketplace at its tag: `/plugin marketplace add havekes/claude_voice#v0.3.0`.
+
+### Anthropic plugin directory
+
+Run `claude plugin validate --strict .`, then submit through the developer portal at https://claude.ai/directory/manage (requires a paid claude.ai plan).
 
 ---
 
 ## Uninstall
 
 ```
-/plugin uninstall claude-voice@cris-m-claude_voice
+/plugin uninstall voice-summaries@havekes-claude_voice
 ```
 
 ---
@@ -237,6 +329,7 @@ MIT
 
 ## Credits
 
+- **[cris-m/claude_voice](https://github.com/cris-m/claude_voice)** — the original plugin this fork builds on
 - **Kokoro TTS** — ONNX text-to-speech engine
 - **Chatterbox** — Emotion-aware TTS by Resemble AI
 - **MLX-Audio** — Apple MLX framework TTS with Qwen3-TTS

@@ -6,12 +6,9 @@ import subprocess
 import sys
 
 
-def _venv_python() -> str:
-    """Return the path to the venv Python executable, platform-aware."""
-    plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if sys.platform == "win32":
-        return os.path.join(plugin_root, ".venv", "Scripts", "python.exe")
-    return os.path.join(plugin_root, ".venv", "bin", "python")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from voice.paths import venv_python as _venv_python
 
 
 def main():

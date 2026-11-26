@@ -7,7 +7,7 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech, TEMP_DIR
+from voice import speak, clean_for_speech, load_config, TEMP_DIR
 
 ERROR_LOG = os.path.join(TEMP_DIR, "speak_summary_error.log")
 DEBUG_LOG = os.path.join(TEMP_DIR, "speak_summary_debug.log")
@@ -52,6 +52,12 @@ def log_debug(msg):
 
 def main():
     try:
+        # Respect speak mode being switched off mid-session, even if Claude
+        # still emits a summary block from earlier instructions.
+        if not load_config().get("tts_summary_enabled", False):
+            log_debug("Speak mode off; skipping")
+            return
+
         input_data = sys.stdin.read().strip()
         if not input_data:
             log_debug("No input data")

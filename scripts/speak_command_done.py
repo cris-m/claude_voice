@@ -8,10 +8,9 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import TEMP_DIR
+from voice import TEMP_DIR, load_config, follow_up
 
 STAMP_DIR = os.path.join(TEMP_DIR, "claude_voice_cmd_times")
-THRESHOLD_SECONDS = 30
 
 
 def main():
@@ -37,15 +36,17 @@ def main():
         except OSError:
             pass
 
-    elapsed = time.time() - start_time
-    if elapsed < THRESHOLD_SECONDS:
+    settings = follow_up(load_config(), "command_done")
+    if not settings["enabled"]:
         return
 
-    from voice import speak, load_config
+    elapsed = time.time() - start_time
+    if elapsed < settings["threshold_seconds"]:
+        return
 
-    config = load_config()
-    message = config.get("messages", {}).get("command_done", "Done! Ready when you are.")
-    speak(message)
+    from voice import speak
+
+    speak(settings["message"])
 
 
 if __name__ == "__main__":

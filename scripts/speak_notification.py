@@ -6,10 +6,12 @@ import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from voice import speak, clean_for_speech
+from voice import speak, clean_for_speech, load_config, follow_up
 
 if __name__ == "__main__":
     try:
+        if not follow_up(load_config(), "notification")["enabled"]:
+            sys.exit(0)
         input_data = json.load(sys.stdin)
         message = input_data.get("message", "")
         if message:

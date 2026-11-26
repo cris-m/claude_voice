@@ -1,37 +1,51 @@
-import json
-import os
-import sys
 import tempfile
 
+from .paths import read_config, venv_python
 from .utils import clean_for_speech, download_kokoro_models
 
-__version__ = "0.2.0"
 __all__ = [
     "speak", "clean_for_speech", "download_kokoro_models",
-    "load_config", "get_tts", "TEMP_DIR", "venv_python",
+    "load_config", "get_tts", "TEMP_DIR", "venv_python", "follow_up",
 ]
+
+# Defaults for the spoken follow-ups that hooks fire without Claude's involvement.
+FOLLOW_UP_DEFAULTS = {
+    "command_done": {
+        "enabled": True,
+        "threshold_seconds": 30,
+        "message": "Done! Ready when you are.",
+    },
+    "idle_done": {
+        "enabled": True,
+        "threshold_seconds": 60,
+        "message": "Hey, I'm all done over here. Let me know if you need anything else.",
+    },
+    "notification": {
+        "enabled": True,
+    },
+}
 
 TEMP_DIR = tempfile.gettempdir()
 
 _LANG_MAP = {"fr": "fr-fr", "zh": "cmn", "pt": "pt-br"}
 
 
-def venv_python() -> str:
-    plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    if sys.platform == "win32":
-        return os.path.join(plugin_root, ".venv", "Scripts", "python.exe")
-    return os.path.join(plugin_root, ".venv", "bin", "python")
-
-
 def load_config() -> dict:
-    plugin_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    config_path = os.path.join(plugin_root, "voice_config.json")
-    with open(config_path, "r") as f:
-        config = json.load(f)
+    config = read_config()
     if "kokoro" in config:
         lang = config["kokoro"].get("lang", "en-us")
         config["kokoro"]["lang"] = _LANG_MAP.get(lang, lang)
     return config
+
+
+def follow_up(config: dict, name: str) -> dict:
+    """Resolved settings for one follow-up: defaults < legacy `messages` < `follow_ups`."""
+    settings = dict(FOLLOW_UP_DEFAULTS.get(name, {}))
+    legacy_message = config.get("messages", {}).get(name)
+    if legacy_message:
+        settings["message"] = legacy_message
+    settings.update(config.get("follow_ups", {}).get(name, {}))
+    return settings
 
 
 def get_tts(config: dict):
@@ -55,6 +69,7 @@ def get_tts(config: dict):
             voice=mx["voice"],
             language=mx["language"],
             instruct=mx["instruct"],
+            streaming_interval=mx.get("streaming_interval", 1.0),
         )
     else:
         from .kokoro_tts import KokoroTTS
@@ -89,4 +104,7 @@ def speak(text: str, **kwargs) -> None:
             "audio_prompt_path": kwargs.get("audio_prompt_path", cb.get("audio_prompt_path")),
         }
 
-    tts.speak(text, **speak_kwargs)
+    if config.get("streaming", True) and tts.supports_streaming:
+        tts.speak_stream(text, **speak_kwargs)
+    else:
+        tts.speak(text, **speak_kwargs)

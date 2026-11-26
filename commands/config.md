@@ -13,7 +13,12 @@ Interactively configure the user's voice settings and save them to `voice_config
 
 Walk the user through choosing their voice settings step by step. After each choice, move to the next. At the end, write the config file and test it.
 
-**First, read the current config** from `${CLAUDE_PLUGIN_ROOT}/voice_config.json` to show what is currently set.
+## Where things live
+
+- `${CLAUDE_PLUGIN_ROOT}`: the plugin's code. It is replaced on every plugin update, so **never write to it**.
+- `${CLAUDE_PLUGIN_DATA}`: persistent data that survives updates. The virtualenv is `${CLAUDE_PLUGIN_DATA}/.venv` and the user's settings are `${CLAUDE_PLUGIN_DATA}/voice_config.json`. If that config file doesn't exist yet, copy `${CLAUDE_PLUGIN_ROOT}/voice_config.json` there first, then read or edit the copy.
+
+**First, read the current config** from `${CLAUDE_PLUGIN_DATA}/voice_config.json` to show what is currently set.
 
 ---
 
@@ -25,7 +30,7 @@ Check which provider is currently configured. Ask if they want to change it.
 - **Chatterbox** — Higher quality, emotion control (exaggeration, cfg_weight), voice cloning from audio. Best for expressive speech.
 - **MLX-Audio** (macOS Apple Silicon only) — Qwen3-TTS, emotion via text instructions, fastest on M-series chips. Best for natural assistant voice.
 
-If they switch providers, tell them to re-run `/claude-voice:init` to install the correct dependencies.
+If they switch providers, tell them to re-run `/voice-summaries:init` to install the correct dependencies.
 
 ---
 
@@ -53,10 +58,10 @@ If non-English, install dependencies:
 
 | Language | Install command |
 |----------|-----------------|
-| Japanese | `cd "${CLAUDE_PLUGIN_ROOT}" && uv pip install "misaki[ja]" && .venv/bin/python -m unidic download` |
-| Chinese | `cd "${CLAUDE_PLUGIN_ROOT}" && uv pip install "misaki[zh]"` |
-| Korean | `cd "${CLAUDE_PLUGIN_ROOT}" && uv pip install "misaki[ko]"` |
-| Others | `cd "${CLAUDE_PLUGIN_ROOT}" && uv pip install misaki` |
+| Japanese | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[ja]" && "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" -m unidic download` |
+| Chinese | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[zh]"` |
+| Korean | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" "misaki[ko]"` |
+| Others | `uv pip install --python "${CLAUDE_PLUGIN_DATA}/.venv" misaki` |
 
 Also ensure `espeak-ng` is installed: `brew list espeak-ng 2>/dev/null || brew install espeak-ng`
 
@@ -162,15 +167,35 @@ Offer presets:
 
 ---
 
-### Step 6: Notification messages
+### Step 5c: Summary length
 
-Ask if the user wants to customize what Claude says for notifications. Show the current messages and let them change if desired. These messages are used by hooks that fire without Claude's involvement.
+Ask for the default `summary_length`: `short` (1-2 sentences), `medium` (3-6 sentences, default), `long` (2-4 paragraphs) or `podcast` (4-8 minute segment). It's used by `/voice-summaries:speak` when no length is given, and by always-on summaries.
+
+---
+
+### Step 6: Streaming
+
+Ask whether to stream audio (`"streaming": true`, the default). With streaming on, playback starts while the rest of the speech is still being generated, which noticeably cuts the delay on long summaries. Kokoro and MLX-Audio support it; Chatterbox ignores the setting and always generates the full clip first. For MLX, `mlx.streaming_interval` (seconds of audio per chunk, default `1.0`) trades latency against smoothness.
+
+---
+
+### Step 6b: Follow-up voice messages
+
+These are spoken by hooks without Claude's involvement. Show the current `follow_ups` block and ask which to keep:
+
+| Key | When it fires | Settings |
+|-----|---------------|----------|
+| `command_done` | After a Bash command that ran longer than the threshold | `enabled`, `threshold_seconds` (default 30), `message` |
+| `idle_done` | When you have not interacted for the threshold after Claude finishes, and no summary was spoken | `enabled`, `threshold_seconds` (default 60, max 170), `message` |
+| `notification` | When Claude Code raises a notification (permission prompt, waiting for input) | `enabled` |
+
+Use a multi-select question to choose which are enabled, then offer to change thresholds and messages.
 
 ---
 
 ### Step 7: Write the config
 
-Save to `${CLAUDE_PLUGIN_ROOT}/voice_config.json`. Set language-appropriate messages using the table below if provider is Kokoro:
+Save to `${CLAUDE_PLUGIN_DATA}/voice_config.json`. Set language-appropriate `follow_ups.*.message` values using the table below if provider is Kokoro:
 
 | Lang | command_done | idle_done |
 |------|-------------|-----------|
@@ -189,7 +214,7 @@ Save to `${CLAUDE_PLUGIN_ROOT}/voice_config.json`. Set language-appropriate mess
 ### Step 8: Test the voice
 
 ```bash
-"${CLAUDE_PLUGIN_ROOT}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" "<test_sentence>"
+CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" "${CLAUDE_PLUGIN_DATA}/.venv/bin/python" "${CLAUDE_PLUGIN_ROOT}/scripts/speak.py" "<test_sentence>"
 ```
 
 Use a natural test sentence appropriate to the language.
