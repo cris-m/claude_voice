@@ -48,7 +48,7 @@ voice-summary/
 │   ├── record_command_start.py
 │   ├── run_hook.py          # Runs a script with the venv Python (all platforms)
 │   ├── record_prompt.py     # Notes when you last sent a message
-│   ├── speak.py             # speak text; --detach / --stop for background playback
+│   ├── speak.py             # speak text; --detach / --pause / --resume / --stop
 │   ├── speak_command_done.py
 │   ├── speak_idle_done.py
 │   ├── speak_notification.py
@@ -62,7 +62,7 @@ voice-summary/
 │   ├── chatterbox_tts.py     # Chatterbox provider
 │   ├── mlx_tts.py            # MLX-Audio provider
 │   ├── paths.py             # Data/state dirs, config loading, OS file locks
-│   ├── speaker.py           # Background speakers: start, track, stop
+│   ├── speaker.py           # Background speakers: start, track, pause, stop
 │   └── utils.py
 ├── tools/
 │   └── release.py           # Bump version, commit, tag vX.Y.Z
@@ -134,10 +134,12 @@ Interactive wizard for speaker, style, speed, default summary length, streaming,
 
 ```
 /voice-summary:speak [short|medium|long|podcast] [what to cover]
+/voice-summary:speak pause
+/voice-summary:speak resume
 /voice-summary:speak stop
 ```
 
-Each invocation speaks one summary, by default of Claude's latest response; add words after the length to choose what it covers. Because it's a skill, you can also just ask: "give me a quick voice summary", "talk me through the refactor, podcast style", "be quiet". Audio plays in the background, so even a podcast doesn't block the conversation.
+Each invocation speaks one summary, by default of Claude's latest response; add words after the length to choose what it covers. Because it's a skill, you can also just ask: "give me a quick voice summary", "talk me through the refactor, podcast style", "hold on", "keep going", "be quiet". Pause keeps your place in the current speech (anything queued behind it waits too); stop discards it. Audio plays in the background, so even a podcast doesn't block the conversation.
 
 | Length | Roughly |
 |--------|---------|

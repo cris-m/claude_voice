@@ -5,6 +5,8 @@
     speak.py < file                  speak stdin (blocks until done)
     speak.py --detach < file         speak stdin in the background, return at once
     speak.py --stop                  stop everything currently being spoken
+    speak.py --pause                 pause playback where it is
+    speak.py --resume                resume paused playback
 
 Add --summary to mark the speech as a summary (suppresses the idle follow-up).
 """
@@ -16,7 +18,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from voice.speaker import (
-    Registration, mark_summary_spoken, speak_detached, stop_all,
+    Registration, mark_summary_spoken, pause_all, resume_all, speak_detached,
+    stop_all,
 )
 
 
@@ -41,6 +44,10 @@ def main() -> None:
 
     if args[:1] == ["--stop"]:
         stop_all()
+    elif args[:1] == ["--pause"]:
+        print("Paused." if pause_all() else "Nothing is playing.")
+    elif args[:1] == ["--resume"]:
+        print("Resumed." if resume_all() else "Nothing is paused.")
     elif args[:1] == ["--detach"]:
         speak_detached(sys.stdin.read(), summary=summary)
     elif args[:1] == ["--file"] and len(args) == 2:

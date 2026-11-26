@@ -1,7 +1,7 @@
 ---
 name: speak
-description: Speak a one-off voice summary aloud through the Voice Summary plugin. Use when the user wants to hear something rather than read it, e.g. "give me a voice summary", "read that out", "say it out loud", "tell me what you did", "talk me through it", "make it a podcast". Takes an optional length (short, medium, long, podcast) and an optional focus. "stop" / "shut up" / "be quiet" stops playback. Invoked directly as /voice-summary:speak [short|medium|long|podcast|stop] [focus].
-argument-hint: "[short|medium|long|podcast|stop] [what to cover]"
+description: Speak a one-off voice summary aloud through the Voice Summary plugin. Use when the user wants to hear something rather than read it, e.g. "give me a voice summary", "read that out", "say it out loud", "tell me what you did", "talk me through it", "make it a podcast". Takes an optional length (short, medium, long, podcast) and an optional focus. "stop" / "shut up" / "be quiet" stops playback; "pause" / "hold on" pauses it and "resume" / "continue" picks it back up. Invoked directly as /voice-summary:speak [short|medium|long|podcast|stop|pause|resume] [focus].
+argument-hint: "[short|medium|long|podcast|stop|pause|resume] [what to cover]"
 allowed-tools: Read, Bash(python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py *)
 ---
 
@@ -16,6 +16,11 @@ Speak **one** summary now. This does not turn on any persistent mode.
 - **stop**: if the argument is `stop` (or the user asks you to stop or be quiet), run the command below and reply in one line. Don't do anything else.
   ```bash
   python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py --stop
+  ```
+- **pause** / **resume**: if the argument is `pause` (or the user asks to pause, hold on, wait) or `resume` (or continue, keep going, unpause), run the matching command below and reply in one line, using what it prints. Don't do anything else. Pausing keeps the place in the current speech; `stop` discards it.
+  ```bash
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py --pause
+  python3 "${CLAUDE_PLUGIN_ROOT}/scripts/run_hook.py" --data "${CLAUDE_PLUGIN_DATA}" speak.py --resume
   ```
 - **Length**: the first word if it is `short`, `medium`, `long` or `podcast`. Natural phrasing counts too ("quick" = short, "in detail" = long, "podcast style" = podcast). Otherwise use `summary_length` from `${CLAUDE_PLUGIN_DATA}/voice_config.json` (default `medium`; if the file doesn't exist, use `medium`).
 - **Focus**: any remaining words say what to cover. With no focus, summarize your most recent response and the work behind it. If there is nothing yet in the conversation, say so instead of speaking.
@@ -47,7 +52,7 @@ If the command fails saying Voice Summary is not initialized, tell the user to r
 
 ## 4. Reply
 
-One short line saying what you're speaking and at which length (for `long` or `podcast`, mention `/voice-summary:speak stop`). Don't repeat the script in the chat, and don't add a TTS_SUMMARY block to this reply even if always-on summaries are enabled, or it would be spoken twice.
+One short line saying what you're speaking and at which length (for `long` or `podcast`, mention `/voice-summary:speak pause` and `stop`). Don't repeat the script in the chat, and don't add a TTS_SUMMARY block to this reply even if always-on summaries are enabled, or it would be spoken twice.
 
 ---
 

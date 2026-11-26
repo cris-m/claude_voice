@@ -3,6 +3,10 @@
 Every speaker process registers itself by holding a lock on its own file in
 state/speakers/. Holding the lock proves the process is alive and is one of
 ours, so --stop never signals a stale or reused PID.
+
+Pausing is cooperative: --pause creates state/paused, and the playing speaker
+checks for it between ~100ms slices of audio (see base._SlicePlayer), holding
+its place until --resume removes it.
 """
 
 import os
@@ -16,6 +20,7 @@ from .paths import PLUGIN_ROOT, FileLock, data_dir, state_dir
 
 SPEAK_SCRIPT = os.path.join(PLUGIN_ROOT, "scripts", "speak.py")
 LAST_SUMMARY_FILE = "last_summary_spoken"
+PAUSED_FILE = "paused"
 
 
 def _speakers_dir() -> str:
@@ -47,6 +52,10 @@ class Registration:
             os.remove(self._path)
         except OSError:
             pass
+        # A pause outlives nothing: once the last speaker is gone, clear it so
+        # the next speech doesn't start out paused.
+        if not live_speakers():
+            _clear_pause()
 
 
 def mark_summary_spoken() -> None:
@@ -96,9 +105,9 @@ def spawn_file(path: str, summary: bool = False) -> None:
     )
 
 
-def stop_all() -> int:
-    """Stop every live speaker (playing or waiting). Returns how many."""
-    stopped = 0
+def live_speakers() -> list:
+    """PIDs of live speakers other than this process (stale entries removed)."""
+    pids = []
     directory = _speakers_dir()
     for name in os.listdir(directory):
         path = os.path.join(directory, name)
@@ -114,9 +123,52 @@ def stop_all() -> int:
         try:
             with open(path) as f:
                 pid = int(f.read().strip())
-            if pid != os.getpid():
-                os.kill(pid, signal.SIGTERM)
-                stopped += 1
         except (OSError, ValueError):
+            continue
+        if pid != os.getpid():
+            pids.append(pid)
+    return pids
+
+
+def stop_all() -> int:
+    """Stop every live speaker (playing or waiting). Returns how many."""
+    _clear_pause()
+    stopped = 0
+    for pid in live_speakers():
+        try:
+            os.kill(pid, signal.SIGTERM)
+            stopped += 1
+        except OSError:
             pass
     return stopped
+
+
+def _paused_path() -> str:
+    return os.path.join(state_dir(), PAUSED_FILE)
+
+
+def _clear_pause() -> None:
+    try:
+        os.remove(_paused_path())
+    except OSError:
+        pass
+
+
+def is_paused() -> bool:
+    return os.path.exists(_paused_path())
+
+
+def pause_all() -> int:
+    """Pause playback. Returns how many speakers are live (0: nothing to pause)."""
+    count = len(live_speakers())
+    if count:
+        with open(_paused_path(), "w") as f:
+            f.write(str(time.time()))
+    return count
+
+
+def resume_all() -> bool:
+    """Resume paused playback. Returns whether anything was paused."""
+    was_paused = is_paused()
+    _clear_pause()
+    return was_paused

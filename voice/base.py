@@ -22,6 +22,39 @@ def _to_float32(samples):
     return samples.reshape(-1)
 
 
+class _SlicePlayer:
+    """Writes audio to an output stream in ~100ms slices.
+
+    Small slices keep signal handling prompt (speak.py --stop) and give a place
+    to honour speak.py --pause: between slices, if the pause flag is set, let
+    the buffered audio drain, stop the device, and wait for --resume.
+    """
+
+    poll = 0.1
+
+    def __init__(self, stream, sample_rate: int):
+        self.stream = stream
+        self.step = max(1, sample_rate // 10)
+
+    def write(self, samples) -> None:
+        frames = samples.reshape(-1, 1)
+        for i in range(0, len(frames), self.step):
+            self._wait_if_paused()
+            self.stream.write(frames[i:i + self.step])
+
+    def _wait_if_paused(self) -> None:
+        from .speaker import is_paused
+
+        if not is_paused():
+            return
+        import time
+
+        self.stream.stop()  # finish the buffered slice, then go quiet
+        while is_paused():
+            time.sleep(self.poll)
+        self.stream.start()
+
+
 class BaseTTS(ABC):
 
     @abstractmethod
@@ -44,15 +77,24 @@ class BaseTTS(ABC):
         if len(samples) == 0:
             return
 
+        stream = None
         lock = audio_lock()
         lock.acquire()
+        interrupted = False
         try:
-            sd.play(samples, sample_rate)
-            sd.wait()
+            stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype="float32")
+            stream.start()
+            _SlicePlayer(stream, sample_rate).write(samples)
         except BaseException:
-            sd.stop()  # interrupted (e.g. speak.py --stop): cut audio now
+            interrupted = True
             raise
         finally:
+            if stream is not None:
+                if interrupted:
+                    stream.abort()  # interrupted (e.g. speak.py --stop): cut audio now
+                else:
+                    stream.stop()  # blocks until buffered audio has played
+                stream.close()
             lock.release()
 
     # Seconds of audio to queue before playback starts. Generation runs ahead
@@ -120,14 +162,8 @@ class BaseTTS(ABC):
             sample_rate = pending[0][1]
             stream = sd.OutputStream(samplerate=sample_rate, channels=1, dtype="float32")
             stream.start()
-            # Write in ~100ms slices: a blocking write of a long chunk would
-            # delay signal handling (speak.py --stop) until it finished.
-            step = max(1, sample_rate // 10)
-
-            def write(samples):
-                frames = samples.reshape(-1, 1)
-                for i in range(0, len(frames), step):
-                    stream.write(frames[i:i + step])
+            # Slices keep --stop prompt and let --pause take effect mid-chunk.
+            write = _SlicePlayer(stream, sample_rate).write
 
             for samples, _ in pending:
                 write(samples)
