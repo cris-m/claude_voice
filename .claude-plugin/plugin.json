@@ -3,7 +3,8 @@
   "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
   "version": "0.3.1",
   "author": {
-    "name": "cris-m"
+    "name": "havekes",
+    "url": "https://github.com/havekes"
   },
   "homepage": "https://github.com/havekes/voice-summary",
   "icon": ".claude-plugin/icon.png",

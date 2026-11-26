@@ -11,7 +11,8 @@
       "name": "voice-summary",
       "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
       "author": {
-        "name": "cris-m"
+        "name": "havekes",
+        "url": "https://github.com/havekes"
       },
       "source": "./",
       "homepage": "https://github.com/havekes/voice-summary"
