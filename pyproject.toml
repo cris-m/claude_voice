@@ -1,6 +1,6 @@
 [project]
 name = "voice-summary"
-version = "0.3.0"
+version = "0.3.1"
 description = "Text-to-speech for Claude Code hooks — supports Kokoro, Chatterbox, and MLX-Audio"
 requires-python = ">=3.11"
 dependencies = [
