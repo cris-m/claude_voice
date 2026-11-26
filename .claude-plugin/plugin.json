@@ -1,7 +1,7 @@
 {
   "name": "voice-summary",
   "description": "Spoken summaries on demand, notifications and follow-ups via Kokoro, Chatterbox or MLX-Audio TTS",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "author": {
     "name": "havekes",
     "url": "https://github.com/havekes"
